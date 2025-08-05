@@ -1,0 +1,23 @@
+# Logs
+logs/
+*.log
+
+# Composer
+vendor/
+
+# Environment files
+.env
+
+# IDE files
+.vscode/
+.idea/
+
+# OS generated files
+.DS_Store
+Thumbs.db
+
+# Temporary files
+*.tmp
+*.temp 
+
+app/config/config.php

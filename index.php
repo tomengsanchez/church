@@ -1,0 +1,111 @@
+<?php
+session_start();
+
+// Load Composer autoloader
+require_once __DIR__ . '/vendor/autoload.php';
+
+// Load configuration
+require_once __DIR__ . '/app/config/config.php';
+
+use App\Core\Router;
+use App\Core\Database;
+use App\Controllers\AuthController;
+use App\Controllers\DashboardController;
+use App\Controllers\ChurchController;
+use App\Controllers\PastorController;
+use App\Controllers\CoachController;
+use App\Controllers\MentorController;
+use App\Controllers\MemberController;
+use App\Controllers\ErrorLogController;
+
+// Initialize database connection
+Database::getInstance();
+
+// Initialize router
+$router = new Router();
+
+// Define routes
+$router->get('/', [DashboardController::class, 'index']);
+$router->get('/home', [DashboardController::class, 'index']);
+
+// Auth routes
+$router->get('/auth/login', [AuthController::class, 'login']);
+$router->post('/auth/login', [AuthController::class, 'login']);
+$router->get('/auth/logout', [AuthController::class, 'logout']);
+$router->get('/auth/register', [AuthController::class, 'register']);
+$router->post('/auth/register', [AuthController::class, 'register']);
+$router->get('/auth/profile', [AuthController::class, 'profile']);
+$router->post('/auth/profile', [AuthController::class, 'profile']);
+
+// Dashboard routes
+$router->get('/dashboard', [DashboardController::class, 'index']);
+
+// Church routes
+$router->get('/church', [ChurchController::class, 'index']);
+$router->get('/church/create', [ChurchController::class, 'create']);
+$router->post('/church/create', [ChurchController::class, 'store']);
+$router->get('/church/edit/{id}', [ChurchController::class, 'edit']);
+$router->post('/church/edit/{id}', [ChurchController::class, 'update']);
+$router->post('/church/delete/{id}', [ChurchController::class, 'delete']);
+
+// Pastor routes
+$router->get('/pastor', [PastorController::class, 'index']);
+$router->get('/pastor/create', [PastorController::class, 'create']);
+$router->post('/pastor/create', [PastorController::class, 'store']);
+$router->get('/pastor/edit/{id}', [PastorController::class, 'edit']);
+$router->post('/pastor/edit/{id}', [PastorController::class, 'update']);
+$router->post('/pastor/delete/{id}', [PastorController::class, 'delete']);
+
+// Coach routes
+$router->get('/coach', [CoachController::class, 'index']);
+$router->get('/coach/create', [CoachController::class, 'create']);
+$router->post('/coach/create', [CoachController::class, 'store']);
+$router->get('/coach/edit/{id}', [CoachController::class, 'edit']);
+$router->post('/coach/edit/{id}', [CoachController::class, 'update']);
+$router->post('/coach/delete/{id}', [CoachController::class, 'delete']);
+
+// Mentor routes
+$router->get('/mentor', [MentorController::class, 'index']);
+$router->get('/mentor/create', [MentorController::class, 'create']);
+$router->post('/mentor/create', [MentorController::class, 'store']);
+$router->get('/mentor/edit/{id}', [MentorController::class, 'edit']);
+$router->post('/mentor/edit/{id}', [MentorController::class, 'update']);
+$router->post('/mentor/delete/{id}', [MentorController::class, 'delete']);
+
+// Member routes
+$router->get('/member', [MemberController::class, 'index']);
+$router->get('/member/create', [MemberController::class, 'create']);
+$router->post('/member/create', [MemberController::class, 'store']);
+$router->get('/member/edit/{id}', [MemberController::class, 'edit']);
+$router->post('/member/edit/{id}', [MemberController::class, 'update']);
+$router->post('/member/delete/{id}', [MemberController::class, 'delete']);
+$router->post('/member/status/{id}', [MemberController::class, 'updateStatus']);
+
+// Error Log routes
+$router->get('/errorlog', [ErrorLogController::class, 'index']);
+$router->get('/errorlog/view/{id}', [ErrorLogController::class, 'view']);
+$router->get('/errorlog/stats', [ErrorLogController::class, 'stats']);
+$router->post('/errorlog/delete/{id}', [ErrorLogController::class, 'delete']);
+$router->post('/errorlog/clear-old', [ErrorLogController::class, 'clearOld']);
+$router->post('/errorlog/clear-all', [ErrorLogController::class, 'clearAll']);
+$router->get('/errorlog/export', [ErrorLogController::class, 'export']);
+
+// Test route for demonstrating error logging
+$router->get('/test-logs', function() {
+    $logger = new \App\Core\Logger();
+    
+    // Log different types of messages
+    $logger->info('This is an informational message', ['test' => true]);
+    $logger->warning('This is a warning message', ['test' => true]);
+    $logger->error('This is an error message', ['test' => true]);
+    $logger->debug('This is a debug message', ['test' => true]);
+    
+    echo '<h1>Test Logs Created</h1>';
+    echo '<p>Check the error logs section to see the test entries.</p>';
+    echo '<p><a href="/errorlog">View Error Logs</a></p>';
+    echo '<p><a href="/">Go Home</a></p>';
+});
+
+// Dispatch the request
+$router->dispatch();
+?> 
