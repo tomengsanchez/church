@@ -50,15 +50,52 @@ body {
     color: var(--charcoal);
 }
 
-/* Custom Table Header Style */
-.table thead tr {
+/* Custom Table Header Style - Comprehensive Override */
+.table thead tr,
+.table.table-striped.table-hover thead tr,
+.table.table-striped thead tr,
+.table.table-hover thead tr {
     background-color: #4b2c6c !important;
 }
 
-.table thead th {
-    color: var(--white) !important;
+.table thead th,
+.table.table-striped.table-hover thead th,
+.table.table-striped thead th,
+.table.table-hover thead th {
+    color: #ffffff !important;
     font-weight: bold !important;
-    border-bottom: 2px solid #4b2c6c;
+    border-bottom: 2px solid #4b2c6c !important;
+    background-color: #4b2c6c !important;
+    border-color: #4b2c6c !important;
+    text-align: left !important;
+}
+
+/* Additional specificity for Bootstrap 5 */
+.table > :not(caption) > * > * {
+    border-bottom-color: #4b2c6c;
+}
+
+.table > thead {
+    background-color: #4b2c6c !important;
+}
+
+.table > thead > tr > th {
+    background-color: #4b2c6c !important;
+    color: #ffffff !important;
+    font-weight: bold !important;
+    border-bottom: 2px solid #4b2c6c !important;
+    border-color: #4b2c6c !important;
+}
+
+/* Ensure table header styles override Bootstrap */
+.table-striped > tbody > tr:nth-of-type(odd) > td,
+.table-striped > tbody > tr:nth-of-type(odd) > th {
+    background-color: rgba(0, 0, 0, 0.02);
+}
+
+.table-striped > tbody > tr:nth-of-type(even) > td,
+.table-striped > tbody > tr:nth-of-type(even) > th {
+    background-color: rgba(0, 0, 0, 0.05);
 }
 
 .btn {
@@ -157,11 +194,57 @@ body {
 .dropdown-menu {
     background-color: var(--white);
     border: 1px solid var(--border-gray);
+    border-radius: 0.5rem;
+    box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
+    padding: 0.5rem 0;
+    min-width: 200px;
+    margin-top: 0.5rem;
+    animation: dropdownFadeIn 0.2s ease-out;
+}
+
+@keyframes dropdownFadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.dropdown-item {
+    padding: 0.75rem 1rem;
+    color: var(--charcoal);
+    transition: all 0.2s ease-in-out;
+    border: none;
+    background: none;
+    font-weight: 500;
+    display: flex;
+    align-items: center;
 }
 
 .dropdown-item:hover {
     background-color: var(--light-gray);
     color: var(--primary-purple);
+    transform: translateX(2px);
+}
+
+.dropdown-item:active {
+    background-color: var(--primary-purple);
+    color: var(--white);
+}
+
+.dropdown-item i {
+    width: 1.25rem;
+    text-align: center;
+    margin-right: 0.75rem;
+    flex-shrink: 0;
+}
+
+.dropdown-divider {
+    margin: 0.5rem 0;
+    border-color: var(--border-gray);
 }
 
 /* Footer */
@@ -269,4 +352,41 @@ a:hover {
         border: 1px solid #dee2e6 !important;
         box-shadow: none !important;
     }
+} 
+
+/* Final override for table headers - maximum specificity */
+body .table thead tr,
+body .table.table-striped.table-hover thead tr,
+body .table.table-striped thead tr,
+body .table.table-hover thead tr {
+    background-color: #4b2c6c !important;
+}
+
+body .table thead th,
+body .table.table-striped.table-hover thead th,
+body .table.table-striped thead th,
+body .table.table-hover thead th {
+    color: #ffffff !important;
+    font-weight: bold !important;
+    border-bottom: 2px solid #4b2c6c !important;
+    background-color: #4b2c6c !important;
+    border-color: #4b2c6c !important;
+    text-align: left !important;
+}
+
+/* Additional specificity for Bootstrap 5 */
+body .table > :not(caption) > * > * {
+    border-bottom-color: #4b2c6c;
+}
+
+body .table > thead {
+    background-color: #4b2c6c !important;
+}
+
+body .table > thead > tr > th {
+    background-color: #4b2c6c !important;
+    color: #ffffff !important;
+    font-weight: bold !important;
+    border-bottom: 2px solid #4b2c6c !important;
+    border-color: #4b2c6c !important;
 } 

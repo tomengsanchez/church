@@ -156,13 +156,18 @@ function hasPermission(string $role): bool
         return false;
     }
     
-    // Super admin has all permissions
-    if ($_SESSION['user_role'] === ROLE_SUPER_ADMIN) {
-        return true;
-    }
+    $userRole = $_SESSION['user_role'];
+    $roleHierarchy = [
+        ROLE_SUPER_ADMIN => 5,
+        ROLE_PASTOR => 4,
+        ROLE_COACH => 3,
+        ROLE_MENTOR => 2,
+        ROLE_MEMBER => 1
+    ];
     
-    // Check specific role
-    return $_SESSION['user_role'] === $role;
+    return isset($roleHierarchy[$userRole]) && 
+           isset($roleHierarchy[$role]) && 
+           $roleHierarchy[$userRole] >= $roleHierarchy[$role];
 }
 
 function isAuthenticated(): bool

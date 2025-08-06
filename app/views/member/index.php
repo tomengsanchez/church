@@ -75,6 +75,7 @@
                                 <th>Pastor</th>
                                 <th>Coach</th>
                                 <th>Mentor</th>
+                                <th>Lifegroup</th>
                                 <th>Status</th>
                                 <th>Joined</th>
                                 <th>Actions</th>
@@ -86,11 +87,21 @@
                                 <td>
                                     <strong><?= htmlspecialchars($member['name'] ?? '') ?></strong>
                                 </td>
-                                <td><?= htmlspecialchars($member['email'] ?? '') ?></td>
+                                <td>
+                                    <?php 
+                                    $email = $member['email'] ?? '';
+                                    if (strpos($email, 'no-email-') === 0 && strpos($email, '@placeholder.local') !== false) {
+                                        echo '<span class="text-muted">No Email</span>';
+                                    } else {
+                                        echo htmlspecialchars($email);
+                                    }
+                                    ?>
+                                </td>
                                 <td><?= htmlspecialchars($member['church_name'] ?? 'Not Assigned') ?></td>
                                 <td><?= htmlspecialchars($member['pastor_name'] ?? 'Not Assigned') ?></td>
                                 <td><?= htmlspecialchars($member['coach_name'] ?? 'Not Assigned') ?></td>
                                 <td><?= htmlspecialchars($member['mentor_name'] ?? 'Not Assigned') ?></td>
+                                <td><?= htmlspecialchars($member['lifegroup_name'] ?? 'Not Assigned') ?></td>
                                 <td>
                                     <span class="badge bg-<?= getStatusBadgeClass($member['status']) ?>">
                                         <?= ucfirst($member['status']) ?>
@@ -164,4 +175,4 @@ function deleteMember(id, name) {
         form.submit();
     }
 }
-</script> 
+</script>

@@ -18,9 +18,10 @@
                         </div>
                         
                         <div class="col-md-6 mb-3">
-                            <label for="email" class="form-label">Email Address *</label>
+                            <label for="email" class="form-label">Email Address</label>
                             <input type="email" class="form-control" id="email" name="email" 
-                                   value="<?= $data['email'] ?? '' ?>" required>
+                                   value="<?= $data['email'] ?? '' ?>">
+                            <div class="form-text">Optional: Email address for member communication.</div>
                         </div>
                     </div>
                     
@@ -64,6 +65,14 @@
                     
                     <div class="row">
                         <div class="col-md-6 mb-3">
+                            <label for="lifegroup_id" class="form-label">Lifegroup</label>
+                            <select class="form-select" id="lifegroup_id" name="lifegroup_id">
+                                <option value="">Select Lifegroup</option>
+                            </select>
+                            <div class="form-text">Optional: Assign this member to a lifegroup. Select a mentor first.</div>
+                        </div>
+                        
+                        <div class="col-md-6 mb-3">
                             <label for="status" class="form-label">Status *</label>
                             <select class="form-select" id="status" name="status" required>
                                 <option value="active" <?= ($data['status'] ?? '') === 'active' ? 'selected' : '' ?>>Active</option>
@@ -81,14 +90,14 @@
                     
                     <div class="row">
                         <div class="col-md-6 mb-3">
-                            <label for="password" class="form-label">Password *</label>
-                            <input type="password" class="form-control" id="password" name="password" required>
-                            <div class="form-text">Password must be at least 6 characters long.</div>
+                            <label for="password" class="form-label">Password</label>
+                            <input type="password" class="form-control" id="password" name="password">
+                            <div class="form-text">Optional: Password for member login. Must be at least 6 characters if provided.</div>
                         </div>
                         
                         <div class="col-md-6 mb-3">
-                            <label for="confirm_password" class="form-label">Confirm Password *</label>
-                            <input type="password" class="form-control" id="confirm_password" name="confirm_password" required>
+                            <label for="confirm_password" class="form-label">Confirm Password</label>
+                            <input type="password" class="form-control" id="confirm_password" name="confirm_password">
                         </div>
                     </div>
                     
@@ -118,15 +127,25 @@ document.getElementById('confirm_password').addEventListener('input', function()
     }
 });
 
+// Get previous form values (for validation errors)
+const previousValues = {
+    church_id: '<?= $data['church_id'] ?? '' ?>',
+    coach_id: '<?= $data['coach_id'] ?? '' ?>',
+    mentor_id: '<?= $data['mentor_id'] ?? '' ?>',
+    lifegroup_id: '<?= $data['lifegroup_id'] ?? '' ?>'
+};
+
 // Filter coaches based on selected church
 document.getElementById('church_id').addEventListener('change', function() {
     const churchId = this.value;
     const coachSelect = document.getElementById('coach_id');
     const mentorSelect = document.getElementById('mentor_id');
+    const lifegroupSelect = document.getElementById('lifegroup_id');
     
     // Reset selections
     coachSelect.innerHTML = '<option value="">Select Coach</option>';
     mentorSelect.innerHTML = '<option value="">Select Mentor</option>';
+    lifegroupSelect.innerHTML = '<option value="">Select Lifegroup</option>';
     
     if (churchId) {
         // Fetch coaches for the selected church
@@ -137,8 +156,17 @@ document.getElementById('church_id').addEventListener('change', function() {
                     const option = document.createElement('option');
                     option.value = coach.id;
                     option.textContent = coach.name;
+                    // Select if this was the previously selected coach
+                    if (coach.id == previousValues.coach_id) {
+                        option.selected = true;
+                    }
                     coachSelect.appendChild(option);
                 });
+                
+                // If we had a previous coach selection, load mentors for that coach
+                if (previousValues.coach_id) {
+                    loadMentorsForCoach(previousValues.coach_id);
+                }
             })
             .catch(error => {
                 console.error('Error fetching coaches:', error);
@@ -149,10 +177,23 @@ document.getElementById('church_id').addEventListener('change', function() {
 // Filter mentors based on selected coach
 document.getElementById('coach_id').addEventListener('change', function() {
     const coachId = this.value;
+    loadMentorsForCoach(coachId);
+});
+
+// Filter lifegroups based on selected mentor
+document.getElementById('mentor_id').addEventListener('change', function() {
+    const mentorId = this.value;
+    loadLifegroupsForMentor(mentorId);
+});
+
+// Helper function to load mentors for a coach
+function loadMentorsForCoach(coachId) {
     const mentorSelect = document.getElementById('mentor_id');
+    const lifegroupSelect = document.getElementById('lifegroup_id');
     
-    // Reset mentor selection
+    // Reset mentor and lifegroup selections
     mentorSelect.innerHTML = '<option value="">Select Mentor</option>';
+    lifegroupSelect.innerHTML = '<option value="">Select Lifegroup</option>';
     
     if (coachId) {
         // Fetch mentors for the selected coach
@@ -163,12 +204,60 @@ document.getElementById('coach_id').addEventListener('change', function() {
                     const option = document.createElement('option');
                     option.value = mentor.id;
                     option.textContent = mentor.name;
+                    // Select if this was the previously selected mentor
+                    if (mentor.id == previousValues.mentor_id) {
+                        option.selected = true;
+                    }
                     mentorSelect.appendChild(option);
                 });
+                
+                // If we had a previous mentor selection, load lifegroups for that mentor
+                if (previousValues.mentor_id) {
+                    loadLifegroupsForMentor(previousValues.mentor_id);
+                }
             })
             .catch(error => {
                 console.error('Error fetching mentors:', error);
             });
+    }
+}
+
+// Helper function to load lifegroups for a mentor
+function loadLifegroupsForMentor(mentorId) {
+    const lifegroupSelect = document.getElementById('lifegroup_id');
+    
+    // Reset lifegroup selection
+    lifegroupSelect.innerHTML = '<option value="">Select Lifegroup</option>';
+    
+    if (mentorId) {
+        // Fetch lifegroups for the selected mentor
+        fetch(`/member/lifegroups-by-mentor/${mentorId}`)
+            .then(response => response.json())
+            .then(lifegroups => {
+                lifegroups.forEach(lifegroup => {
+                    const option = document.createElement('option');
+                    option.value = lifegroup.id;
+                    option.textContent = lifegroup.name;
+                    // Select if this was the previously selected lifegroup
+                    if (lifegroup.id == previousValues.lifegroup_id) {
+                        option.selected = true;
+                    }
+                    lifegroupSelect.appendChild(option);
+                });
+            })
+            .catch(error => {
+                console.error('Error fetching lifegroups:', error);
+            });
+    }
+}
+
+// Load dropdowns on page load if we have previous values
+document.addEventListener('DOMContentLoaded', function() {
+    const churchSelect = document.getElementById('church_id');
+    
+    // If we have a previous church selection, trigger the change event
+    if (previousValues.church_id && churchSelect.value === previousValues.church_id) {
+        churchSelect.dispatchEvent(new Event('change'));
     }
 });
 </script> 

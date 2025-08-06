@@ -41,6 +41,7 @@ class AuthController extends Controller
             $_SESSION['user_email'] = $user['email'];
             $_SESSION['user_name'] = $user['name'];
             $_SESSION['user_role'] = $user['role'];
+            $_SESSION['church_id'] = $user['church_id'] ?? null;
 
             logInfo('User logged in successfully', [
                 'user_id' => $user['id'],

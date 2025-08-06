@@ -32,22 +32,58 @@ class UserModel extends Model
     
     public function create(array $data): int
     {
-        if (isset($data['password'])) {
+        // Handle optional password
+        if (isset($data['password']) && !empty($data['password'])) {
             $data['password'] = password_hash($data['password'], PASSWORD_DEFAULT);
+        } else {
+            // If no password provided, generate a random one or set a default
+            $data['password'] = password_hash('changeme123', PASSWORD_DEFAULT);
         }
+        
+        // Handle optional email - if empty, generate a unique placeholder
+        if (empty($data['email'])) {
+            $data['email'] = $this->generateUniqueEmail();
+        }
+        
         $data['created_at'] = date('Y-m-d H:i:s');
         return parent::create($data);
     }
     
     public function update(int $id, array $data): bool
     {
+        // Handle optional password
         if (isset($data['password']) && !empty($data['password'])) {
             $data['password'] = password_hash($data['password'], PASSWORD_DEFAULT);
         } else {
             unset($data['password']);
         }
+        
+        // Handle optional email - if empty, generate a unique placeholder
+        if (isset($data['email']) && empty($data['email'])) {
+            $data['email'] = $this->generateUniqueEmail();
+        }
+        
         $data['updated_at'] = date('Y-m-d H:i:s');
         return parent::update($id, $data);
+    }
+    
+    /**
+     * Generate a unique email placeholder for users without email
+     */
+    private function generateUniqueEmail(): string
+    {
+        $timestamp = time();
+        $random = mt_rand(1000, 9999);
+        $email = "no-email-{$timestamp}-{$random}@placeholder.local";
+        
+        // Ensure it's unique by checking if it exists
+        while ($this->findByEmail($email)) {
+            $timestamp = time();
+            $random = mt_rand(1000, 9999);
+            $email = "no-email-{$timestamp}-{$random}@placeholder.local";
+        }
+        
+        return $email;
     }
     
     public function getUsersByRole(string $role): array
@@ -76,6 +112,17 @@ class UserModel extends Model
         return $this->db->fetchAll($sql);
     }
     
+    public function getCoachesWithChurchesAndPastorsByChurch(int $churchId): array
+    {
+        $sql = "SELECT u.*, c.name as church_name, p.name as pastor_name 
+                FROM {$this->table} u 
+                LEFT JOIN churches c ON u.church_id = c.id 
+                LEFT JOIN users p ON c.pastor_id = p.id 
+                WHERE u.role = 'coach' AND u.church_id = ? 
+                ORDER BY u.name ASC";
+        return $this->db->fetchAll($sql, [$churchId]);
+    }
+    
     public function getMentorsWithChurchesAndPastors(): array
     {
         $sql = "SELECT u.*, c.name as church_name, p.name as pastor_name, co.name as coach_name 
@@ -87,6 +134,19 @@ class UserModel extends Model
                 WHERE u.role = 'mentor' 
                 ORDER BY u.name ASC";
         return $this->db->fetchAll($sql);
+    }
+    
+    public function getMentorsWithChurchesAndPastorsByChurch(int $churchId): array
+    {
+        $sql = "SELECT u.*, c.name as church_name, p.name as pastor_name, co.name as coach_name 
+                FROM {$this->table} u 
+                LEFT JOIN churches c ON u.church_id = c.id 
+                LEFT JOIN users p ON c.pastor_id = p.id 
+                LEFT JOIN hierarchy h ON u.id = h.user_id 
+                LEFT JOIN users co ON h.parent_id = co.id AND co.role = 'coach'
+                WHERE u.role = 'mentor' AND u.church_id = ? 
+                ORDER BY u.name ASC";
+        return $this->db->fetchAll($sql, [$churchId]);
     }
     
     public function getCoachesForSelection(): array

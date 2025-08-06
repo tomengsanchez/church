@@ -26,11 +26,20 @@
                     
                     <div class="row">
                         <div class="col-md-6 mb-3">
+                            <label for="satelife_name" class="form-label">Satelife Name</label>
+                            <input type="text" class="form-control" id="satelife_name" name="satelife_name" 
+                                   value="<?= htmlspecialchars($coach['satelife_name'] ?? '') ?>" placeholder="Optional ministry name">
+                            <div class="form-text">Optional name for your Satelife ministry (e.g., "Youth Ministry", "Children's Ministry")</div>
+                        </div>
+                        
+                        <div class="col-md-6 mb-3">
                             <label for="phone" class="form-label">Phone Number</label>
                             <input type="tel" class="form-control" id="phone" name="phone" 
                                    value="<?= htmlspecialchars($coach['phone'] ?? '') ?>">
                         </div>
-                        
+                    </div>
+                    
+                    <div class="row">
                         <div class="col-md-6 mb-3">
                             <label for="church_id" class="form-label">Church *</label>
                             <select class="form-select" id="church_id" name="church_id" required>
@@ -42,18 +51,22 @@
                                 <?php endforeach; ?>
                             </select>
                         </div>
-                    </div>
-                    
-                    <div class="row">
+                        
                         <div class="col-md-6 mb-3">
                             <label for="password" class="form-label">New Password</label>
                             <input type="password" class="form-control" id="password" name="password">
                             <div class="form-text">Leave blank to keep current password.</div>
                         </div>
-                        
+                    </div>
+                    
+                    <div class="row">
                         <div class="col-md-6 mb-3">
                             <label for="confirm_password" class="form-label">Confirm New Password</label>
                             <input type="password" class="form-control" id="confirm_password" name="confirm_password">
+                        </div>
+                        
+                        <div class="col-md-6 mb-3">
+                            <!-- Empty column for layout balance -->
                         </div>
                     </div>
                     

@@ -10,7 +10,7 @@
     <!-- Font Awesome -->
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
     <!-- Custom CSS -->
-    <link href="/assets/css/style.css" rel="stylesheet">
+    <link href="/assets/css/style.css?v=<?= time() ?>" rel="stylesheet">
 </head>
 <body>
     <!-- Navigation -->
@@ -32,40 +32,89 @@
                         </a>
                     </li>
                     
-                    <?php if (hasPermission(ROLE_SUPER_ADMIN)): ?>
-                    <li class="nav-item">
-                        <a class="nav-link" href="/church">
-                            <i class="fas fa-church me-1"></i>Churches
+                    <!-- People Dropdown -->
+                    <?php if (hasPermission(ROLE_SUPER_ADMIN) || hasPermission(ROLE_PASTOR) || hasPermission(ROLE_COACH) || hasPermission(ROLE_MENTOR)): ?>
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle" href="#" id="peopleDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                            <i class="fas fa-users me-1"></i>People
                         </a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="/pastor">
-                            <i class="fas fa-user-tie me-1"></i>Pastors
-                        </a>
+                        <ul class="dropdown-menu shadow-sm" aria-labelledby="peopleDropdown">
+                            <?php if (hasPermission(ROLE_SUPER_ADMIN)): ?>
+                            <li>
+                                <a class="dropdown-item" href="/church">
+                                    <i class="fas fa-church me-2"></i>Churches
+                                </a>
+                            </li>
+                            <li>
+                                <a class="dropdown-item" href="/pastor">
+                                    <i class="fas fa-user-tie me-2"></i>Pastors
+                                </a>
+                            </li>
+                            <?php endif; ?>
+                            
+                            <?php if (hasPermission(ROLE_SUPER_ADMIN) || hasPermission(ROLE_PASTOR)): ?>
+                            <li>
+                                <a class="dropdown-item" href="/coach">
+                                    <i class="fas fa-users me-2"></i>Coaches
+                                </a>
+                            </li>
+                            <?php endif; ?>
+                            
+                            <?php if (hasPermission(ROLE_SUPER_ADMIN) || hasPermission(ROLE_COACH)): ?>
+                            <li>
+                                <a class="dropdown-item" href="/mentor">
+                                    <i class="fas fa-user-graduate me-2"></i>Mentors
+                                </a>
+                            </li>
+                            <?php endif; ?>
+                            
+                            <?php if (hasPermission(ROLE_SUPER_ADMIN) || hasPermission(ROLE_MENTOR)): ?>
+                            <li>
+                                <a class="dropdown-item" href="/lifegroup">
+                                    <i class="fas fa-users me-2"></i>Lifegroups
+                                </a>
+                            </li>
+                            <li>
+                                <a class="dropdown-item" href="/member">
+                                    <i class="fas fa-user me-2"></i>Members
+                                </a>
+                            </li>
+                            <?php endif; ?>
+                        </ul>
                     </li>
                     <?php endif; ?>
                     
-                    <?php if (hasPermission(ROLE_PASTOR)): ?>
-                    <li class="nav-item">
-                        <a class="nav-link" href="/coach">
-                            <i class="fas fa-users me-1"></i>Coaches
+                    <!-- Events Dropdown -->
+                    <?php if (hasPermission(ROLE_SUPER_ADMIN) || hasPermission(ROLE_PASTOR) || hasPermission(ROLE_COACH) || hasPermission(ROLE_MENTOR)): ?>
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle" href="#" id="eventsDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                            <i class="fas fa-calendar-alt me-1"></i>Events
                         </a>
-                    </li>
-                    <?php endif; ?>
-                    
-                    <?php if (hasPermission(ROLE_COACH)): ?>
-                    <li class="nav-item">
-                        <a class="nav-link" href="/mentor">
-                            <i class="fas fa-user-graduate me-1"></i>Mentors
-                        </a>
-                    </li>
-                    <?php endif; ?>
-                    
-                    <?php if (hasPermission(ROLE_MENTOR)): ?>
-                    <li class="nav-item">
-                        <a class="nav-link" href="/member">
-                            <i class="fas fa-user me-1"></i>Members
-                        </a>
+                        <ul class="dropdown-menu shadow-sm" aria-labelledby="eventsDropdown">
+                            <?php if (hasPermission(ROLE_SUPER_ADMIN) || hasPermission(ROLE_PASTOR)): ?>
+                            <li>
+                                <a class="dropdown-item" href="/events/church">
+                                    <i class="fas fa-church me-2"></i>Church Events
+                                </a>
+                            </li>
+                            <?php endif; ?>
+                            
+                            <?php if (hasPermission(ROLE_SUPER_ADMIN) || hasPermission(ROLE_COACH)): ?>
+                            <li>
+                                <a class="dropdown-item" href="/events/satelife">
+                                    <i class="fas fa-satellite me-2"></i>Satelife Events
+                                </a>
+                            </li>
+                            <?php endif; ?>
+                            
+                            <?php if (hasPermission(ROLE_SUPER_ADMIN) || hasPermission(ROLE_MENTOR)): ?>
+                            <li>
+                                <a class="dropdown-item" href="/events/lifegroup">
+                                    <i class="fas fa-users me-2"></i>Lifegroup Events
+                                </a>
+                            </li>
+                            <?php endif; ?>
+                        </ul>
                     </li>
                     <?php endif; ?>
                 </ul>
@@ -75,14 +124,18 @@
                         <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button" data-bs-toggle="dropdown">
                             <i class="fas fa-user-circle me-1"></i><?= $_SESSION['user_name'] ?>
                         </a>
-                        <ul class="dropdown-menu">
-                            <li><a class="dropdown-item" href="/auth/profile">
-                                <i class="fas fa-user-edit me-1"></i>Profile
-                            </a></li>
+                        <ul class="dropdown-menu shadow-sm">
+                            <li>
+                                <a class="dropdown-item" href="/auth/profile">
+                                    <i class="fas fa-user-edit me-2"></i>Profile
+                                </a>
+                            </li>
                             <li><hr class="dropdown-divider"></li>
-                            <li><a class="dropdown-item" href="/auth/logout">
-                                <i class="fas fa-sign-out-alt me-1"></i>Logout
-                            </a></li>
+                            <li>
+                                <a class="dropdown-item" href="/auth/logout">
+                                    <i class="fas fa-sign-out-alt me-2"></i>Logout
+                                </a>
+                            </li>
                         </ul>
                     </li>
                 </ul>

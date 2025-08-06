@@ -17,6 +17,10 @@ use App\Controllers\CoachController;
 use App\Controllers\MentorController;
 use App\Controllers\MemberController;
 use App\Controllers\ErrorLogController;
+use App\Controllers\ChurchEventController;
+use App\Controllers\SatelifeEventController;
+use App\Controllers\LifegroupEventController;
+use App\Controllers\LifegroupController;
 
 // Initialize database connection
 Database::getInstance();
@@ -74,6 +78,17 @@ $router->post('/mentor/edit/{id}', [MentorController::class, 'update']);
 $router->post('/mentor/delete/{id}', [MentorController::class, 'delete']);
 $router->get('/mentor/coaches/{churchId}', [MentorController::class, 'getCoachesByChurch']);
 
+// Lifegroup routes
+$router->get('/lifegroup', [LifegroupController::class, 'index']);
+$router->get('/lifegroup/create', [LifegroupController::class, 'create']);
+$router->post('/lifegroup/create', [LifegroupController::class, 'store']);
+$router->get('/lifegroup/edit/{id}', [LifegroupController::class, 'edit']);
+$router->post('/lifegroup/edit/{id}', [LifegroupController::class, 'update']);
+$router->post('/lifegroup/update/{id}', [LifegroupController::class, 'update']);
+$router->post('/lifegroup/delete/{id}', [LifegroupController::class, 'delete']);
+$router->get('/lifegroup/view/{id}', [LifegroupController::class, 'show']);
+$router->get('/lifegroup/mentors/{churchId}', [LifegroupController::class, 'getMentorsByChurch']);
+
 // Member routes
 $router->get('/member', [MemberController::class, 'index']);
 $router->get('/member/create', [MemberController::class, 'create']);
@@ -85,6 +100,12 @@ $router->post('/member/status/{id}', [MemberController::class, 'updateStatus']);
 $router->get('/member/coaches/{churchId}', [MemberController::class, 'getCoachesByChurch']);
 $router->get('/member/mentors/{churchId}', [MemberController::class, 'getMentorsByChurch']);
 $router->get('/member/mentors-by-coach/{coachId}', [MemberController::class, 'getMentorsByCoach']);
+$router->get('/member/lifegroups-by-mentor/{mentorId}', [MemberController::class, 'getLifegroupsByMentor']);
+
+// Event routes
+$router->get('/events/church', [ChurchEventController::class, 'index']);
+$router->get('/events/satelife', [SatelifeEventController::class, 'index']);
+$router->get('/events/lifegroup', [LifegroupEventController::class, 'index']);
 
 // Error Log routes
 $router->get('/errorlog', [ErrorLogController::class, 'index']);

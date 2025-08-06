@@ -43,8 +43,22 @@ class DashboardController extends Controller
                 break;
                 
             case ROLE_PASTOR:
-                $data['church'] = $this->churchModel->getChurchWithDetails($churchId);
-                $data['stats'] = $this->memberModel->getMemberStats($churchId);
+                // Get church_id from session or user record
+                if (!$churchId) {
+                    $user = $this->userModel->findById($_SESSION['user_id']);
+                    $churchId = $user['church_id'] ?? null;
+                    if ($churchId) {
+                        $_SESSION['church_id'] = $churchId;
+                    }
+                }
+                
+                if ($churchId) {
+                    $data['church'] = $this->churchModel->getChurchWithDetails((int)$churchId);
+                    $data['stats'] = $this->memberModel->getMemberStats((int)$churchId);
+                } else {
+                    $data['church'] = null;
+                    $data['stats'] = [];
+                }
                 $data['members'] = $this->memberModel->getMembersByPastor($_SESSION['user_id']);
                 break;
                 

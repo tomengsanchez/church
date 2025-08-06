@@ -57,7 +57,8 @@ class MemberModel extends Model
                 ch.name as church_name,
                 p.name as pastor_name,
                 c.name as coach_name,
-                m.name as mentor_name
+                m.name as mentor_name,
+                l.name as lifegroup_name
                 FROM {$this->table} u 
                 LEFT JOIN churches ch ON u.church_id = ch.id
                 LEFT JOIN users p ON ch.pastor_id = p.id
@@ -65,6 +66,8 @@ class MemberModel extends Model
                 LEFT JOIN users m ON h1.parent_id = m.id AND m.role = 'mentor'
                 LEFT JOIN hierarchy h2 ON m.id = h2.user_id
                 LEFT JOIN users c ON h2.parent_id = c.id AND c.role = 'coach'
+                LEFT JOIN lifegroup_members lm ON u.id = lm.user_id AND lm.status = 'active'
+                LEFT JOIN lifegroups l ON lm.lifegroup_id = l.id
                 WHERE u.id = ?";
         return $this->db->fetch($sql, [$id]);
     }
@@ -75,7 +78,8 @@ class MemberModel extends Model
                 ch.name as church_name,
                 p.name as pastor_name,
                 c.name as coach_name,
-                m.name as mentor_name
+                m.name as mentor_name,
+                l.name as lifegroup_name
                 FROM {$this->table} u 
                 LEFT JOIN churches ch ON u.church_id = ch.id
                 LEFT JOIN users p ON ch.pastor_id = p.id
@@ -83,6 +87,8 @@ class MemberModel extends Model
                 LEFT JOIN users m ON h1.parent_id = m.id AND m.role = 'mentor'
                 LEFT JOIN hierarchy h2 ON m.id = h2.user_id
                 LEFT JOIN users c ON h2.parent_id = c.id AND c.role = 'coach'
+                LEFT JOIN lifegroup_members lm ON u.id = lm.user_id AND lm.status = 'active'
+                LEFT JOIN lifegroups l ON lm.lifegroup_id = l.id
                 WHERE u.role = 'member'
                 ORDER BY u.name ASC";
         return $this->db->fetchAll($sql);
@@ -112,7 +118,8 @@ class MemberModel extends Model
                 ch.name as church_name,
                 p.name as pastor_name,
                 c.name as coach_name,
-                m.name as mentor_name
+                m.name as mentor_name,
+                l.name as lifegroup_name
                 FROM {$this->table} u 
                 LEFT JOIN churches ch ON u.church_id = ch.id
                 LEFT JOIN users p ON ch.pastor_id = p.id
@@ -120,6 +127,8 @@ class MemberModel extends Model
                 LEFT JOIN users m ON h1.parent_id = m.id AND m.role = 'mentor'
                 LEFT JOIN hierarchy h2 ON m.id = h2.user_id
                 LEFT JOIN users c ON h2.parent_id = c.id AND c.role = 'coach'
+                LEFT JOIN lifegroup_members lm ON u.id = lm.user_id AND lm.status = 'active'
+                LEFT JOIN lifegroups l ON lm.lifegroup_id = l.id
                 WHERE u.role = 'member' AND (u.name LIKE ? OR u.email LIKE ?)";
         $params = ["%$search%", "%$search%"];
         

@@ -6,18 +6,21 @@ use App\Core\Controller;
 use App\Models\MemberModel;
 use App\Models\UserModel;
 use App\Models\ChurchModel;
+use App\Models\LifegroupModel;
 
 class MemberController extends Controller
 {
     private MemberModel $memberModel;
     private UserModel $userModel;
     private ChurchModel $churchModel;
+    private LifegroupModel $lifegroupModel;
     
     public function __construct()
     {
         $this->memberModel = new MemberModel();
         $this->userModel = new UserModel();
         $this->churchModel = new ChurchModel();
+        $this->lifegroupModel = new LifegroupModel();
     }
     
     public function index(): void
@@ -113,24 +116,50 @@ class MemberController extends Controller
         ];
         
         // Validate required fields
-        if (empty($data['name']) || empty($data['email']) || empty($data['password'])) {
-            flash('Name, email, and password are required', 'error');
-            $this->view('member/create', ['data' => $data]);
+        if (empty($data['name'])) {
+            flash('Name is required', 'error');
+            $this->view('member/create', [
+                'data' => array_merge($data, [
+                    'coach_id' => $_POST['coach_id'] ?? null,
+                    'mentor_id' => $_POST['mentor_id'] ?? null,
+                    'lifegroup_id' => $_POST['lifegroup_id'] ?? null
+                ]),
+                'churches' => $this->churchModel->getAllChurches()
+            ]);
             return;
         }
         
-        // Validate password length
-        if (strlen($data['password']) < 6) {
-            flash('Password must be at least 6 characters long', 'error');
-            $this->view('member/create', ['data' => $data]);
-            return;
+        // Validate email if provided
+        if (!empty($data['email'])) {
+            // Check if email already exists
+            if ($this->userModel->findByEmail($data['email'])) {
+                flash('Email address already exists', 'error');
+                $this->view('member/create', [
+                    'data' => array_merge($data, [
+                        'coach_id' => $_POST['coach_id'] ?? null,
+                        'mentor_id' => $_POST['mentor_id'] ?? null,
+                        'lifegroup_id' => $_POST['lifegroup_id'] ?? null
+                    ]),
+                    'churches' => $this->churchModel->getAllChurches()
+                ]);
+                return;
+            }
         }
         
-        // Check if email already exists
-        if ($this->userModel->findByEmail($data['email'])) {
-            flash('Email address already exists', 'error');
-            $this->view('member/create', ['data' => $data]);
-            return;
+        // Validate password if provided
+        if (!empty($data['password'])) {
+            if (strlen($data['password']) < 6) {
+                flash('Password must be at least 6 characters long', 'error');
+                $this->view('member/create', [
+                    'data' => array_merge($data, [
+                        'coach_id' => $_POST['coach_id'] ?? null,
+                        'mentor_id' => $_POST['mentor_id'] ?? null,
+                        'lifegroup_id' => $_POST['lifegroup_id'] ?? null
+                    ]),
+                    'churches' => $this->churchModel->getAllChurches()
+                ]);
+                return;
+            }
         }
         
         $userId = $this->userModel->create($data);
@@ -151,11 +180,24 @@ class MemberController extends Controller
                 }
             }
             
+            // Handle lifegroup assignment
+            if (!empty($_POST['lifegroup_id'])) {
+                $lifegroupId = (int)$_POST['lifegroup_id'];
+                $this->lifegroupModel->addMemberToLifegroup($lifegroupId, $userId);
+            }
+            
             flash('Member created successfully', 'success');
             $this->redirect('/member');
         } else {
             flash('Failed to create member', 'error');
-            $this->view('member/create', ['data' => $data]);
+            $this->view('member/create', [
+                'data' => array_merge($data, [
+                    'coach_id' => $_POST['coach_id'] ?? null,
+                    'mentor_id' => $_POST['mentor_id'] ?? null,
+                    'lifegroup_id' => $_POST['lifegroup_id'] ?? null
+                ]),
+                'churches' => $this->churchModel->getAllChurches()
+            ]);
         }
     }
     
@@ -172,20 +214,24 @@ class MemberController extends Controller
         
         $churches = $this->churchModel->getAllChurches();
         
-        // Get current coach and mentor assignments
-        $currentCoach = $this->userModel->getHierarchyParent((int) $id);
-        $currentMentor = null;
+        // Get current mentor assignment (members are directly assigned to mentors)
+        $currentMentor = $this->userModel->getHierarchyParent((int) $id);
+        $currentCoach = null;
         
-        // If there's a coach, get the mentor through the coach
-        if ($currentCoach && $currentCoach['role'] === 'coach') {
-            $currentMentor = $this->userModel->getHierarchyParent($currentCoach['id']);
+        // If there's a mentor, get the coach through the mentor
+        if ($currentMentor && $currentMentor['role'] === 'mentor') {
+            $currentCoach = $this->userModel->getHierarchyParent($currentMentor['id']);
         }
+        
+        // Get current lifegroup assignment
+        $currentLifegroup = $this->lifegroupModel->getMemberLifegroup((int) $id);
         
         $this->view('member/edit', [
             'member' => $member, 
             'churches' => $churches,
             'currentCoach' => $currentCoach,
-            'currentMentor' => $currentMentor
+            'currentMentor' => $currentMentor,
+            'currentLifegroup' => $currentLifegroup
         ]);
     }
     
@@ -214,6 +260,44 @@ class MemberController extends Controller
             $data['password'] = $_POST['password'];
         }
         
+        // Validate required fields
+        if (empty($data['name'])) {
+            flash('Name is required', 'error');
+            $this->view('member/edit', [
+                'member' => array_merge($member, $data, [
+                    'coach_id' => $_POST['coach_id'] ?? null,
+                    'mentor_id' => $_POST['mentor_id'] ?? null,
+                    'lifegroup_id' => $_POST['lifegroup_id'] ?? null
+                ]),
+                'churches' => $this->churchModel->getAllChurches(),
+                'currentCoach' => null,
+                'currentMentor' => null,
+                'currentLifegroup' => null
+            ]);
+            return;
+        }
+        
+        // Validate email if provided
+        if (!empty($data['email'])) {
+            // Check if email already exists (excluding current user)
+            $existingUser = $this->userModel->findByEmail($data['email']);
+            if ($existingUser && $existingUser['id'] != $memberId) {
+                flash('Email address already exists', 'error');
+                $this->view('member/edit', [
+                    'member' => array_merge($member, $data, [
+                        'coach_id' => $_POST['coach_id'] ?? null,
+                        'mentor_id' => $_POST['mentor_id'] ?? null,
+                        'lifegroup_id' => $_POST['lifegroup_id'] ?? null
+                    ]),
+                    'churches' => $this->churchModel->getAllChurches(),
+                    'currentCoach' => null,
+                    'currentMentor' => null,
+                    'currentLifegroup' => null
+                ]);
+                return;
+            }
+        }
+        
         if ($this->userModel->update($memberId, $data)) {
             // Handle mentor assignment (members are assigned to mentors)
             $mentorId = !empty($_POST['mentor_id']) ? (int)$_POST['mentor_id'] : null;
@@ -231,11 +315,33 @@ class MemberController extends Controller
                 }
             }
             
+            // Handle lifegroup assignment
+            if (!empty($_POST['lifegroup_id'])) {
+                $lifegroupId = (int)$_POST['lifegroup_id'];
+                // First remove from any existing lifegroup
+                $this->lifegroupModel->removeMemberFromAllLifegroups($memberId);
+                // Then add to the new lifegroup
+                $this->lifegroupModel->addMemberToLifegroup($lifegroupId, $memberId);
+            } else {
+                // If no lifegroup is selected, remove from any existing lifegroup
+                $this->lifegroupModel->removeMemberFromAllLifegroups($memberId);
+            }
+            
             flash('Member updated successfully', 'success');
             $this->redirect('/member');
         } else {
             flash('Failed to update member', 'error');
-            $this->view('member/edit', ['member' => $member]);
+            $this->view('member/edit', [
+                'member' => array_merge($member, $data, [
+                    'coach_id' => $_POST['coach_id'] ?? null,
+                    'mentor_id' => $_POST['mentor_id'] ?? null,
+                    'lifegroup_id' => $_POST['lifegroup_id'] ?? null
+                ]),
+                'churches' => $this->churchModel->getAllChurches(),
+                'currentCoach' => null,
+                'currentMentor' => null,
+                'currentLifegroup' => null
+            ]);
         }
     }
     
@@ -314,6 +420,17 @@ class MemberController extends Controller
         
         header('Content-Type: application/json');
         echo json_encode($mentors);
+        exit;
+    }
+    
+    public function getLifegroupsByMentor(string $mentorId): void
+    {
+        $this->requireRole(ROLE_MENTOR);
+        
+        $lifegroups = $this->lifegroupModel->getLifegroupsByMentor((int) $mentorId);
+        
+        header('Content-Type: application/json');
+        echo json_encode($lifegroups);
         exit;
     }
 } 

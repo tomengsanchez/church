@@ -24,6 +24,7 @@
                         <thead>
                             <tr>
                                 <th>Name</th>
+                                <th>Satelife Name</th>
                                 <th>Email</th>
                                 <th>Phone</th>
                                 <th>Church</th>
@@ -38,6 +39,13 @@
                             <tr>
                                 <td>
                                     <strong><?= htmlspecialchars($coach['name'] ?? '') ?></strong>
+                                </td>
+                                <td>
+                                    <?php if (!empty($coach['satelife_name'])): ?>
+                                        <span class="badge bg-info"><?= htmlspecialchars($coach['satelife_name']) ?></span>
+                                    <?php else: ?>
+                                        <span class="text-muted">-</span>
+                                    <?php endif; ?>
                                 </td>
                                 <td><?= htmlspecialchars($coach['email'] ?? '') ?></td>
                                 <td><?= htmlspecialchars($coach['phone'] ?? '') ?></td>
