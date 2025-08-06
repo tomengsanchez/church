@@ -2,7 +2,7 @@
   "project": {
     "name": "LIFEGIVER CHURCH - Member Monitoring Application",
     "version": "1.0.0",
-    "last_updated": "2025-08-05",
+    "last_updated": "2025-08-06",
     "status": "Production Ready"
   },
   "completed_features": {
@@ -80,6 +80,16 @@
         "Sample Data Population",
         "Database Connection Management"
       ]
+    },
+    "coach_features": {
+      "status": "✅ Complete",
+      "items": [
+        "Optional Satelife Name field for coaches",
+        "Coach-specific permission system",
+        "Hierarchy-based data filtering",
+        "Coach can only manage assigned mentors",
+        "Coach can only see lifegroups from assigned mentors"
+      ]
     }
   },
   "bug_fixes_completed": {
@@ -88,7 +98,8 @@
       "issues": [
         "Router closure handler support",
         "Root path handling",
-        "Dynamic parameter extraction"
+        "Dynamic parameter extraction",
+        "Lifegroup update route mismatch"
       ]
     },
     "view_issues": {
@@ -112,18 +123,160 @@
       "issues": [
         "Login page 500 errors",
         "Session management",
-        "Role-based access"
+        "Role-based access",
+        "Missing church_id in session for pastors"
       ]
+    },
+    "permission_issues": {
+      "status": "✅ Fixed",
+      "issues": [
+        "Pastors seeing data from other churches",
+        "Coaches seeing mentors from other coaches",
+        "Coaches seeing lifegroups from other coaches",
+        "Super admins not seeing all mentors",
+        "Navigation visibility for super admins"
+      ]
+    }
+  },
+  "permission_system_updates": {
+    "status": "✅ Complete",
+    "implemented_fixes": [
+      {
+        "issue": "Coach Mentor Permissions",
+        "description": "Coaches could see mentors from other coaches within the same church",
+        "solution": "Added getMentorsWithChurchesAndPastorsByCoach() method and updated MentorController to filter by hierarchy relationships",
+        "files_modified": [
+          "app/Models/UserModel.php",
+          "app/Controllers/MentorController.php"
+        ]
+      },
+      {
+        "issue": "Coach Lifegroup Permissions",
+        "description": "Coaches could see lifegroups managed by mentors not assigned to them",
+        "solution": "Added getLifegroupsByCoach() method and updated LifegroupController to filter by hierarchy relationships",
+        "files_modified": [
+          "app/Models/LifegroupModel.php",
+          "app/Controllers/LifegroupController.php"
+        ]
+      },
+      {
+        "issue": "Super Admin Mentor Access",
+        "description": "Super admins couldn't see all mentors due to role restrictions",
+        "solution": "Updated MentorController to use requireAuth() instead of requireRole() and updated navigation visibility",
+        "files_modified": [
+          "app/Controllers/MentorController.php",
+          "app/views/layouts/authenticated.php"
+        ]
+      },
+      {
+        "issue": "Pastor Dashboard Error",
+        "description": "Pastors getting null argument error in dashboard",
+        "solution": "Added church_id to session during login and improved null handling in DashboardController",
+        "files_modified": [
+          "app/Controllers/AuthController.php",
+          "app/Controllers/DashboardController.php"
+        ]
+      }
+    ],
+    "permission_structure": {
+      "super_admin": "Can access and manage ALL data across all churches",
+      "pastor": "Can access and manage ALL data from their assigned church",
+      "coach": "Can only access and manage data related to mentors assigned to them through hierarchy",
+      "mentor": "Can only access and manage their own data and assigned members",
+      "member": "Can only view their own profile"
     }
   },
   "current_status": {
     "application_health": "🟢 Excellent",
-    "error_log_status": "🟢 Clean (2 old warnings remaining)",
+    "error_log_status": "🟢 Clean",
     "all_modules_working": "✅ Yes",
-    "production_ready": "✅ Yes"
+    "production_ready": "✅ Yes",
+    "permission_system": "✅ Fully Implemented"
+  },
+  "next_development_focus": {
+    "priority": "🔴 HIGH",
+    "focus_area": "Permission Fixes for Create and Edit Dropdown Fields",
+    "description": "Implement role-based restrictions for dropdown fields in create and edit forms to ensure users can only select appropriate options based on their permissions",
+    "issues_to_address": [
+      {
+        "issue": "Pastor Church Selection",
+        "description": "Pastors can currently select other churches when creating/editing members",
+        "expected_behavior": "Pastors should only be able to select their own church",
+        "affected_forms": [
+          "Member create/edit",
+          "Coach create/edit", 
+          "Mentor create/edit"
+        ],
+        "files_to_modify": [
+          "app/Controllers/MemberController.php",
+          "app/Controllers/CoachController.php",
+          "app/Controllers/MentorController.php",
+          "app/views/member/create.php",
+          "app/views/member/edit.php",
+          "app/views/coach/create.php",
+          "app/views/coach/edit.php",
+          "app/views/mentor/create.php",
+          "app/views/mentor/edit.php"
+        ]
+      },
+      {
+        "issue": "Coach Church and Coach Selection",
+        "description": "Coaches can currently select other churches and coaches when creating/editing mentors",
+        "expected_behavior": "Coaches should only be able to select their own church and themselves as the coach",
+        "affected_forms": [
+          "Mentor create/edit"
+        ],
+        "files_to_modify": [
+          "app/Controllers/MentorController.php",
+          "app/views/mentor/create.php",
+          "app/views/mentor/edit.php"
+        ]
+      },
+      {
+        "issue": "Mentor Coach Selection",
+        "description": "Mentors might be able to select coaches not assigned to them",
+        "expected_behavior": "Mentors should only be able to select coaches assigned to their church",
+        "affected_forms": [
+          "Member create/edit"
+        ],
+        "files_to_modify": [
+          "app/Controllers/MemberController.php",
+          "app/views/member/create.php",
+          "app/views/member/edit.php"
+        ]
+      }
+    ],
+    "implementation_approach": [
+      "Update controller methods to filter dropdown options based on user role",
+      "Modify view files to pre-select appropriate values",
+      "Add validation to prevent unauthorized selections",
+      "Ensure consistent behavior across all CRUD operations"
+    ],
+    "estimated_time": "4-6 hours",
+    "acceptance_criteria": [
+      "Pastors can only select their own church in all forms",
+      "Coaches can only select their own church and themselves as coach",
+      "Mentors can only select coaches from their church",
+      "All dropdowns respect hierarchy relationships",
+      "Forms pre-populate with correct default values",
+      "Validation prevents unauthorized selections"
+    ]
   },
   "tomorrow_tasks": {
     "priority_high": [
+      {
+        "task": "Permission Fixes for Create/Edit Dropdown Fields",
+        "description": "Implement role-based restrictions for dropdown fields in create and edit forms",
+        "estimated_time": "4-6 hours",
+        "acceptance_criteria": [
+          "Pastors can only select their own church in all forms",
+          "Coaches can only select their own church and themselves as coach",
+          "Mentors can only select coaches from their church",
+          "All dropdowns respect hierarchy relationships",
+          "Forms pre-populate with correct default values",
+          "Validation prevents unauthorized selections"
+        ]
+      },
       {
         "task": "User Experience Testing",
         "description": "Test all user flows from different role perspectives",
