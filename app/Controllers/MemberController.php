@@ -34,7 +34,7 @@ class MemberController extends Controller
         
         $members = [];
         
-        // If filters are applied, use search method
+        // If filters are applied, use search method (now includes hierarchy)
         if (!empty($status) || !empty($churchFilter) || !empty($search)) {
             $members = $this->memberModel->searchMembers($search, $churchFilter ? (int)$churchFilter : null);
             if (!empty($status)) {
@@ -63,14 +63,21 @@ class MemberController extends Controller
             }
         }
         
-        // Enhance member data with hierarchy information (only if not already enhanced)
+        // Always enhance member data with hierarchy information
         $enhancedMembers = [];
-        if ($userRole === ROLE_SUPER_ADMIN && empty($status) && empty($churchFilter) && empty($search)) {
-            // Super admin already has enhanced data
-            $enhancedMembers = $members;
-        } else {
-            foreach ($members as $member) {
-                $enhancedMembers[] = $this->memberModel->getMemberWithHierarchy($member['id']);
+        foreach ($members as $member) {
+            // Always get full hierarchy data for each member
+            $enhancedMember = $this->memberModel->getMemberWithHierarchy($member['id']);
+            if ($enhancedMember) {
+                $enhancedMembers[] = $enhancedMember;
+            } else {
+                // Fallback to original member data if enhancement fails
+                // Add default values for hierarchy fields
+                $member['church_name'] = $member['church_name'] ?? 'Not Assigned';
+                $member['pastor_name'] = $member['pastor_name'] ?? 'Not Assigned';
+                $member['coach_name'] = $member['coach_name'] ?? 'Not Assigned';
+                $member['mentor_name'] = $member['mentor_name'] ?? 'Not Assigned';
+                $enhancedMembers[] = $member;
             }
         }
         
@@ -129,20 +136,18 @@ class MemberController extends Controller
         $userId = $this->userModel->create($data);
         
         if ($userId) {
-            // Handle coach assignment
-            if (!empty($_POST['coach_id'])) {
-                $this->userModel->createHierarchyRelationship($userId, (int)$_POST['coach_id']);
-            }
-            
-            // Handle mentor assignment (only if coach is selected)
-            if (!empty($_POST['mentor_id']) && !empty($_POST['coach_id'])) {
-                $coachId = (int)$_POST['coach_id'];
+            // Handle mentor assignment (members are assigned to mentors)
+            if (!empty($_POST['mentor_id'])) {
                 $mentorId = (int)$_POST['mentor_id'];
+                $this->userModel->createHierarchyRelationship($userId, $mentorId);
                 
-                // Check if coach is already assigned to this mentor
-                $coachMentor = $this->userModel->getHierarchyParent($coachId);
-                if (!$coachMentor || $coachMentor['id'] != $mentorId) {
-                    $this->userModel->updateHierarchyRelationship($coachId, $mentorId);
+                // If coach is also selected, ensure the mentor is assigned to the coach
+                if (!empty($_POST['coach_id'])) {
+                    $coachId = (int)$_POST['coach_id'];
+                    $coachMentor = $this->userModel->getHierarchyParent($mentorId);
+                    if (!$coachMentor || $coachMentor['id'] != $coachId) {
+                        $this->userModel->updateHierarchyRelationship($mentorId, $coachId);
+                    }
                 }
             }
             
@@ -210,19 +215,19 @@ class MemberController extends Controller
         }
         
         if ($this->userModel->update($memberId, $data)) {
-            // Handle coach assignment
-            $coachId = !empty($_POST['coach_id']) ? (int)$_POST['coach_id'] : null;
-            $this->userModel->updateHierarchyRelationship($memberId, $coachId);
+            // Handle mentor assignment (members are assigned to mentors)
+            $mentorId = !empty($_POST['mentor_id']) ? (int)$_POST['mentor_id'] : null;
+            $this->userModel->updateHierarchyRelationship($memberId, $mentorId);
             
-            // Handle mentor assignment (only if coach is selected)
+            // If mentor is selected and coach is also selected, ensure the mentor is assigned to the coach
             if (!empty($_POST['mentor_id']) && !empty($_POST['coach_id'])) {
-                $mentorId = (int)$_POST['mentor_id'];
                 $coachId = (int)$_POST['coach_id'];
+                $mentorId = (int)$_POST['mentor_id'];
                 
-                // Check if coach is already assigned to this mentor
-                $coachMentor = $this->userModel->getHierarchyParent($coachId);
-                if (!$coachMentor || $coachMentor['id'] != $mentorId) {
-                    $this->userModel->updateHierarchyRelationship($coachId, $mentorId);
+                // Check if mentor is already assigned to this coach
+                $mentorCoach = $this->userModel->getHierarchyParent($mentorId);
+                if (!$mentorCoach || $mentorCoach['id'] != $coachId) {
+                    $this->userModel->updateHierarchyRelationship($mentorId, $coachId);
                 }
             }
             

@@ -65,7 +65,7 @@ CREATE TABLE `hierarchy` (
   KEY `idx_parent_id` (`parent_id`),
   CONSTRAINT `hierarchy_ibfk_1` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE,
   CONSTRAINT `hierarchy_ibfk_2` FOREIGN KEY (`parent_id`) REFERENCES `users` (`id`) ON DELETE CASCADE
-) ENGINE=InnoDB AUTO_INCREMENT=6 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=9 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -74,7 +74,7 @@ CREATE TABLE `hierarchy` (
 
 LOCK TABLES `hierarchy` WRITE;
 /*!40000 ALTER TABLE `hierarchy` DISABLE KEYS */;
-INSERT INTO `hierarchy` VALUES (1,3,2,'2025-08-05 06:00:46'),(2,4,3,'2025-08-05 06:00:46'),(3,5,4,'2025-08-05 06:00:46'),(4,6,4,'2025-08-05 06:00:46'),(5,7,4,'2025-08-05 06:00:46');
+INSERT INTO `hierarchy` VALUES (1,3,2,'2025-08-05 06:00:46'),(2,4,3,'2025-08-05 06:00:46'),(3,5,4,'2025-08-05 06:00:46'),(4,6,4,'2025-08-05 06:00:46'),(5,7,4,'2025-08-05 06:00:46'),(7,11,9,'2025-08-06 02:58:24'),(8,12,9,'2025-08-06 03:08:02');
 /*!40000 ALTER TABLE `hierarchy` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -104,7 +104,7 @@ CREATE TABLE `users` (
   KEY `idx_church_id` (`church_id`),
   KEY `idx_status` (`status`),
   CONSTRAINT `users_ibfk_1` FOREIGN KEY (`church_id`) REFERENCES `churches` (`id`) ON DELETE SET NULL
-) ENGINE=InnoDB AUTO_INCREMENT=9 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=13 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -113,7 +113,7 @@ CREATE TABLE `users` (
 
 LOCK TABLES `users` WRITE;
 /*!40000 ALTER TABLE `users` DISABLE KEYS */;
-INSERT INTO `users` VALUES (1,'Super Admin','admin@churchapp.local','$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi',NULL,NULL,'super_admin',NULL,'active','2025-08-05 06:00:46','2025-08-05 06:00:46'),(2,'John Pastor','pastor@dynamicchurch.local','$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi',NULL,NULL,'pastor',1,'active','2025-08-05 06:00:46','2025-08-05 06:00:46'),(3,'Sarah Coach','coach@dynamicchurch.local','$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi',NULL,NULL,'coach',1,'active','2025-08-05 06:00:46','2025-08-05 06:00:46'),(4,'Mike Mentor','mentor@dynamicchurch.local','$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi',NULL,NULL,'mentor',1,'active','2025-08-05 06:00:46','2025-08-05 06:00:46'),(5,'Alice Member','alice@dynamicchurch.local','$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi',NULL,NULL,'member',1,'active','2025-08-05 06:00:46','2025-08-05 06:00:46'),(6,'Bob Member','bob@dynamicchurch.local','$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi',NULL,NULL,'member',1,'active','2025-08-05 06:00:46','2025-08-05 06:00:46'),(7,'Carol Member','carol@dynamicchurch.local','$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi',NULL,NULL,'member',1,'active','2025-08-05 06:00:46','2025-08-05 06:00:46'),(8,'Pastor Michael','mrtomy31@gmail.com','$2y$10$4X27nMl12199cS8Vvu1FbeeWln5jKg90g/fzvAo5tF4HSKpe53thu','admin@churchapp.local','','pastor',3,'active','2025-08-05 20:04:16','2025-08-05 20:09:44');
+INSERT INTO `users` VALUES (1,'Super Admin','admin@churchapp.local','$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi',NULL,NULL,'super_admin',NULL,'active','2025-08-05 06:00:46','2025-08-05 06:00:46'),(2,'John Pastor','pastor@dynamicchurch.local','$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi',NULL,NULL,'pastor',1,'active','2025-08-05 06:00:46','2025-08-05 06:00:46'),(3,'Sarah Coach','coach@dynamicchurch.local','$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi',NULL,NULL,'coach',1,'active','2025-08-05 06:00:46','2025-08-05 06:00:46'),(4,'Mike Mentor','mentor@dynamicchurch.local','$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi',NULL,NULL,'mentor',1,'active','2025-08-05 06:00:46','2025-08-05 06:00:46'),(5,'Alice Member','alice@dynamicchurch.local','$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi',NULL,NULL,'member',1,'active','2025-08-05 06:00:46','2025-08-05 06:00:46'),(6,'Bob Member','bob@dynamicchurch.local','$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi',NULL,NULL,'member',1,'active','2025-08-05 06:00:46','2025-08-05 06:00:46'),(7,'Carol Member','carol@dynamicchurch.local','$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi',NULL,NULL,'member',1,'active','2025-08-05 06:00:46','2025-08-05 06:00:46'),(8,'Pastor Michael','mrtomy31@gmail.com','$2y$10$4X27nMl12199cS8Vvu1FbeeWln5jKg90g/fzvAo5tF4HSKpe53thu','admin@churchapp.local','','pastor',3,'active','2025-08-05 20:04:16','2025-08-05 20:09:44'),(9,'Chester','tomeng@gmail.com','$2y$10$KecjRsOmZ0oIEuSM.BSQs.HAOzD1U3zZtRuNEvBayHxhRuNr5HYAu','tomeng@gmail.com','','coach',3,'active','2025-08-05 20:41:34','2025-08-06 02:41:34'),(10,'Aaron','a@gm.com','$2y$10$kGYDn4vmJiGcvY7JxP6TeOl0/bY5QOorSk2l6.kyIJdRUbNZeQHJO','9898','','coach',3,'active','2025-08-05 20:48:50','2025-08-06 02:48:50'),(11,'Eugene','e@gm.com','$2y$10$0KLBNi7CO4UFGkah45nL8eIaPXgBK4CCnUPeXY42qXBt.LzILkfvG','a@gm.com','','mentor',3,'active','2025-08-05 20:57:54','2025-08-05 20:58:24'),(12,'RJ','rj@gm.com','$2y$10$mPu7bWRBCNX0SzxsrIQg0OMeUbhS3cMI3KEWATfLKTTe5URLSM5GW','e@gm.com','','mentor',3,'active','2025-08-05 21:08:02','2025-08-06 03:08:02');
 /*!40000 ALTER TABLE `users` ENABLE KEYS */;
 UNLOCK TABLES;
 /*!40103 SET TIME_ZONE=@OLD_TIME_ZONE */;
@@ -126,4 +126,4 @@ UNLOCK TABLES;
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2025-08-06 10:32:30
+-- Dump completed on 2025-08-06 11:27:24

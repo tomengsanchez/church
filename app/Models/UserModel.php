@@ -146,13 +146,13 @@ class UserModel extends Model
         return $this->db->query($sql, [$userId, $parentId])->rowCount() > 0;
     }
     
-    public function updateHierarchyRelationship(int $userId, int $parentId): bool
+    public function updateHierarchyRelationship(int $userId, ?int $parentId): bool
     {
         // First delete existing relationship
         $deleteSql = "DELETE FROM hierarchy WHERE user_id = ?";
         $this->db->query($deleteSql, [$userId]);
         
-        // Then create new relationship
+        // Then create new relationship if parentId is provided
         if ($parentId) {
             return $this->createHierarchyRelationship($userId, $parentId);
         }
