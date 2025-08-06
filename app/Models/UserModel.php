@@ -55,6 +55,118 @@ class UserModel extends Model
         return $this->findAll(['role' => $role], 'name ASC');
     }
     
+    public function getPastorsWithChurches(): array
+    {
+        $sql = "SELECT u.*, c.name as church_name 
+                FROM {$this->table} u 
+                LEFT JOIN churches c ON u.church_id = c.id 
+                WHERE u.role = 'pastor' 
+                ORDER BY u.name ASC";
+        return $this->db->fetchAll($sql);
+    }
+    
+    public function getCoachesWithChurchesAndPastors(): array
+    {
+        $sql = "SELECT u.*, c.name as church_name, p.name as pastor_name 
+                FROM {$this->table} u 
+                LEFT JOIN churches c ON u.church_id = c.id 
+                LEFT JOIN users p ON c.pastor_id = p.id 
+                WHERE u.role = 'coach' 
+                ORDER BY u.name ASC";
+        return $this->db->fetchAll($sql);
+    }
+    
+    public function getMentorsWithChurchesAndPastors(): array
+    {
+        $sql = "SELECT u.*, c.name as church_name, p.name as pastor_name, co.name as coach_name 
+                FROM {$this->table} u 
+                LEFT JOIN churches c ON u.church_id = c.id 
+                LEFT JOIN users p ON c.pastor_id = p.id 
+                LEFT JOIN hierarchy h ON u.id = h.user_id 
+                LEFT JOIN users co ON h.parent_id = co.id AND co.role = 'coach'
+                WHERE u.role = 'mentor' 
+                ORDER BY u.name ASC";
+        return $this->db->fetchAll($sql);
+    }
+    
+    public function getCoachesForSelection(): array
+    {
+        $sql = "SELECT u.id, u.name, c.name as church_name 
+                FROM {$this->table} u 
+                LEFT JOIN churches c ON u.church_id = c.id 
+                WHERE u.role = 'coach' AND u.status = 'active' 
+                ORDER BY u.name ASC";
+        return $this->db->fetchAll($sql);
+    }
+    
+    public function getCoachesByChurch(int $churchId): array
+    {
+        $sql = "SELECT u.id, u.name, c.name as church_name 
+                FROM {$this->table} u 
+                LEFT JOIN churches c ON u.church_id = c.id 
+                WHERE u.role = 'coach' AND u.status = 'active' AND u.church_id = ? 
+                ORDER BY u.name ASC";
+        return $this->db->fetchAll($sql, [$churchId]);
+    }
+    
+    public function getMentorsByChurch(int $churchId): array
+    {
+        $sql = "SELECT u.id, u.name, c.name as church_name 
+                FROM {$this->table} u 
+                LEFT JOIN churches c ON u.church_id = c.id 
+                WHERE u.role = 'mentor' AND u.status = 'active' AND u.church_id = ? 
+                ORDER BY u.name ASC";
+        return $this->db->fetchAll($sql, [$churchId]);
+    }
+    
+    public function getMentorsByCoach(int $coachId): array
+    {
+        $sql = "SELECT u.id, u.name, c.name as church_name 
+                FROM {$this->table} u 
+                LEFT JOIN churches c ON u.church_id = c.id 
+                LEFT JOIN hierarchy h ON u.id = h.user_id 
+                WHERE u.role = 'mentor' AND u.status = 'active' AND h.parent_id = ? 
+                ORDER BY u.name ASC";
+        return $this->db->fetchAll($sql, [$coachId]);
+    }
+    
+    public function getMentorsForSelection(): array
+    {
+        $sql = "SELECT u.id, u.name, c.name as church_name 
+                FROM {$this->table} u 
+                LEFT JOIN churches c ON u.church_id = c.id 
+                WHERE u.role = 'mentor' AND u.status = 'active' 
+                ORDER BY u.name ASC";
+        return $this->db->fetchAll($sql);
+    }
+    
+    public function createHierarchyRelationship(int $userId, int $parentId): bool
+    {
+        $sql = "INSERT INTO hierarchy (user_id, parent_id) VALUES (?, ?)";
+        return $this->db->query($sql, [$userId, $parentId])->rowCount() > 0;
+    }
+    
+    public function updateHierarchyRelationship(int $userId, int $parentId): bool
+    {
+        // First delete existing relationship
+        $deleteSql = "DELETE FROM hierarchy WHERE user_id = ?";
+        $this->db->query($deleteSql, [$userId]);
+        
+        // Then create new relationship
+        if ($parentId) {
+            return $this->createHierarchyRelationship($userId, $parentId);
+        }
+        return true;
+    }
+    
+    public function getHierarchyParent(int $userId): array|false
+    {
+        $sql = "SELECT u.* FROM {$this->table} u 
+                INNER JOIN hierarchy h ON u.id = h.parent_id 
+                WHERE h.user_id = ?";
+        return $this->db->fetch($sql, [$userId]);
+    }
+    
     public function getHierarchyUsers(int $userId, string $role): array
     {
         $sql = "SELECT * FROM {$this->table} WHERE role = ? AND id IN (

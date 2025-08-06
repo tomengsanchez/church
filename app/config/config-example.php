@@ -145,6 +145,11 @@ function getFlash(): ?array
     return $flash;
 }
 
+function flash(string $message, string $type = 'info'): void
+{
+    setFlash($type, $message);
+}
+
 function hasPermission(string $role): bool
 {
     if (!isset($_SESSION['user_role'])) {
@@ -184,6 +189,17 @@ function formatDate(string $date): string
 function formatDateTime(string $date): string
 {
     return date('M j, Y g:i A', strtotime($date));
+}
+
+function getStatusBadgeClass(string $status): string
+{
+    switch ($status) {
+        case 'active': return 'success';
+        case 'inactive': return 'secondary';
+        case 'pending': return 'warning';
+        case 'suspended': return 'danger';
+        default: return 'secondary';
+    }
 }
 
 function getTimeAgo(string $timestamp): string

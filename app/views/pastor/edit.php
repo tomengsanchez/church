@@ -14,13 +14,13 @@
                         <div class="col-md-6 mb-3">
                             <label for="name" class="form-label">Full Name *</label>
                             <input type="text" class="form-control" id="name" name="name" 
-                                   value="<?= htmlspecialchars($pastor['name']) ?>" required>
+                                   value="<?= htmlspecialchars($pastor['name'] ?? '') ?>" required>
                         </div>
                         
                         <div class="col-md-6 mb-3">
                             <label for="email" class="form-label">Email Address *</label>
                             <input type="email" class="form-control" id="email" name="email" 
-                                   value="<?= htmlspecialchars($pastor['email']) ?>" required>
+                                   value="<?= htmlspecialchars($pastor['email'] ?? '') ?>" required>
                         </div>
                     </div>
                     
@@ -28,7 +28,7 @@
                         <div class="col-md-6 mb-3">
                             <label for="phone" class="form-label">Phone Number</label>
                             <input type="tel" class="form-control" id="phone" name="phone" 
-                                   value="<?= htmlspecialchars($pastor['phone']) ?>">
+                                   value="<?= htmlspecialchars($pastor['phone'] ?? '') ?>">
                         </div>
                         
                         <div class="col-md-6 mb-3">
@@ -37,7 +37,7 @@
                                 <option value="">Select Church</option>
                                 <?php foreach ($churches as $church): ?>
                                 <option value="<?= $church['id'] ?>" <?= $pastor['church_id'] == $church['id'] ? 'selected' : '' ?>>
-                                    <?= htmlspecialchars($church['name']) ?>
+                                    <?= htmlspecialchars($church['name'] ?? '') ?>
                                 </option>
                                 <?php endforeach; ?>
                             </select>
@@ -59,21 +59,7 @@
                     
                     <div class="mb-3">
                         <label for="address" class="form-label">Address</label>
-                        <textarea class="form-control" id="address" name="address" rows="3"><?= htmlspecialchars($pastor['address']) ?></textarea>
-                    </div>
-                    
-                    <div class="row">
-                        <div class="col-md-6 mb-3">
-                            <label for="date_of_birth" class="form-label">Date of Birth</label>
-                            <input type="date" class="form-control" id="date_of_birth" name="date_of_birth" 
-                                   value="<?= htmlspecialchars($pastor['date_of_birth']) ?>">
-                        </div>
-                        
-                        <div class="col-md-6 mb-3">
-                            <label for="ordination_date" class="form-label">Ordination Date</label>
-                            <input type="date" class="form-control" id="ordination_date" name="ordination_date" 
-                                   value="<?= htmlspecialchars($pastor['ordination_date']) ?>">
-                        </div>
+                        <textarea class="form-control" id="address" name="address" rows="3"><?= htmlspecialchars($pastor['address'] ?? '') ?></textarea>
                     </div>
                     
                     <div class="d-flex justify-content-between">

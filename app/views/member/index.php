@@ -35,7 +35,7 @@
                             <option value="">All Churches</option>
                             <?php foreach ($churches as $church): ?>
                             <option value="<?= $church['id'] ?>" <?= ($_GET['church_id'] ?? '') == $church['id'] ? 'selected' : '' ?>>
-                                <?= htmlspecialchars($church['name']) ?>
+                                <?= htmlspecialchars($church['name'] ?? '') ?>
                             </option>
                             <?php endforeach; ?>
                         </select>
@@ -59,103 +59,100 @@
     </div>
 </div>
 
-<div class="row">
-    <?php foreach ($members as $member): ?>
-    <div class="col-md-6 col-lg-4 mb-4">
-        <div class="card h-100">
-            <div class="card-header">
-                <h5 class="mb-0">
-                    <i class="fas fa-user me-2"></i><?= htmlspecialchars($member['name']) ?>
-                </h5>
-            </div>
-            <div class="card-body">
-                <div class="mb-3">
-                    <strong>Email:</strong><br>
-                    <?= htmlspecialchars($member['email']) ?>
-                </div>
-                <div class="mb-3">
-                    <strong>Church:</strong><br>
-                    <?= htmlspecialchars($member['church_name'] ?? 'Not Assigned') ?>
-                </div>
-                <div class="mb-3">
-                    <strong>Pastor:</strong><br>
-                    <?= htmlspecialchars($member['pastor_name'] ?? 'Not Assigned') ?>
-                </div>
-                <div class="mb-3">
-                    <strong>Coach:</strong><br>
-                    <?= htmlspecialchars($member['coach_name'] ?? 'Not Assigned') ?>
-                </div>
-                <div class="mb-3">
-                    <strong>Mentor:</strong><br>
-                    <?= htmlspecialchars($member['mentor_name'] ?? 'Not Assigned') ?>
-                </div>
-                <div class="mb-3">
-                    <strong>Status:</strong>
-                    <span class="badge bg-<?= getStatusBadgeClass($member['status']) ?>">
-                        <?= ucfirst($member['status']) ?>
-                    </span>
-                </div>
-                <div class="mb-3">
-                    <strong>Joined:</strong> <?= date('M j, Y', strtotime($member['created_at'])) ?>
-                </div>
-            </div>
-            <div class="card-footer">
-                <div class="btn-group w-100" role="group">
-                    <a href="/member/edit/<?= $member['id'] ?>" class="btn btn-outline-primary btn-sm">
-                        <i class="fas fa-edit me-1"></i>Edit
-                    </a>
-                    <button type="button" class="btn btn-outline-danger btn-sm" 
-                            onclick="deleteMember(<?= $member['id'] ?>, '<?= htmlspecialchars($member['name']) ?>')">
-                        <i class="fas fa-trash me-1"></i>Delete
-                    </button>
-                </div>
-            </div>
-        </div>
-    </div>
-    <?php endforeach; ?>
-</div>
-
-<?php if (empty($members)): ?>
+<!-- Members Table -->
 <div class="row">
     <div class="col-12">
         <div class="card">
-            <div class="card-body text-center py-5">
-                <i class="fas fa-users fa-3x text-muted mb-3"></i>
-                <h4 class="text-muted">No Members Found</h4>
-                <p class="text-muted">Start by adding your first member.</p>
-                <a href="/member/create" class="btn btn-primary">
-                    <i class="fas fa-plus me-2"></i>Add Member
-                </a>
+            <div class="card-body">
+                <?php if (!empty($members)): ?>
+                <div class="table-responsive">
+                    <table class="table table-striped table-hover">
+                        <thead>
+                            <tr>
+                                <th>Name</th>
+                                <th>Email</th>
+                                <th>Church</th>
+                                <th>Pastor</th>
+                                <th>Coach</th>
+                                <th>Mentor</th>
+                                <th>Status</th>
+                                <th>Joined</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <?php foreach ($members as $member): ?>
+                            <tr>
+                                <td>
+                                    <strong><?= htmlspecialchars($member['name'] ?? '') ?></strong>
+                                </td>
+                                <td><?= htmlspecialchars($member['email'] ?? '') ?></td>
+                                <td><?= htmlspecialchars($member['church_name'] ?? 'Not Assigned') ?></td>
+                                <td><?= htmlspecialchars($member['pastor_name'] ?? 'Not Assigned') ?></td>
+                                <td><?= htmlspecialchars($member['coach_name'] ?? 'Not Assigned') ?></td>
+                                <td><?= htmlspecialchars($member['mentor_name'] ?? 'Not Assigned') ?></td>
+                                <td>
+                                    <span class="badge bg-<?= getStatusBadgeClass($member['status']) ?>">
+                                        <?= ucfirst($member['status']) ?>
+                                    </span>
+                                </td>
+                                <td><?= date('M j, Y', strtotime($member['created_at'])) ?></td>
+                                <td>
+                                    <div class="btn-group" role="group">
+                                        <a href="/member/edit/<?= $member['id'] ?>" class="btn btn-outline-primary btn-sm" title="Edit">
+                                            <i class="fas fa-edit"></i>
+                                        </a>
+                                        <button type="button" class="btn btn-outline-danger btn-sm" 
+                                                onclick="deleteMember(<?= $member['id'] ?>, '<?= htmlspecialchars($member['name'] ?? '') ?>')" title="Delete">
+                                            <i class="fas fa-trash"></i>
+                                        </button>
+                                    </div>
+                                </td>
+                            </tr>
+                            <?php endforeach; ?>
+                        </tbody>
+                    </table>
+                </div>
+                
+                <!-- Pagination -->
+                <?php if (isset($pagination) && $pagination['total_pages'] > 1): ?>
+                <nav aria-label="Member pagination" class="mt-4">
+                    <ul class="pagination justify-content-center">
+                        <?php if ($pagination['current_page'] > 1): ?>
+                        <li class="page-item">
+                            <a class="page-link" href="?page=<?= $pagination['current_page'] - 1 ?>&status=<?= $_GET['status'] ?? '' ?>&church_id=<?= $_GET['church_id'] ?? '' ?>&search=<?= $_GET['search'] ?? '' ?>">Previous</a>
+                        </li>
+                        <?php endif; ?>
+                        
+                        <?php for ($i = 1; $i <= $pagination['total_pages']; $i++): ?>
+                        <li class="page-item <?= $i == $pagination['current_page'] ? 'active' : '' ?>">
+                            <a class="page-link" href="?page=<?= $i ?>&status=<?= $_GET['status'] ?? '' ?>&church_id=<?= $_GET['church_id'] ?? '' ?>&search=<?= $_GET['search'] ?? '' ?>"><?= $i ?></a>
+                        </li>
+                        <?php endfor; ?>
+                        
+                        <?php if ($pagination['current_page'] < $pagination['total_pages']): ?>
+                        <li class="page-item">
+                            <a class="page-link" href="?page=<?= $pagination['current_page'] + 1 ?>&status=<?= $_GET['status'] ?? '' ?>&church_id=<?= $_GET['church_id'] ?? '' ?>&search=<?= $_GET['search'] ?? '' ?>">Next</a>
+                        </li>
+                        <?php endif; ?>
+                    </ul>
+                </nav>
+                <?php endif; ?>
+                
+                <?php else: ?>
+                <div class="text-center py-5">
+                    <i class="fas fa-users fa-3x text-muted mb-3"></i>
+                    <h4 class="text-muted">No Members Found</h4>
+                    <p class="text-muted">Start by adding your first member.</p>
+                    <a href="/member/create" class="btn btn-primary">
+                        <i class="fas fa-plus me-2"></i>Add Member
+                    </a>
+                </div>
+                <?php endif; ?>
             </div>
         </div>
     </div>
 </div>
-<?php endif; ?>
-
-<!-- Pagination -->
-<?php if (isset($pagination) && $pagination['total_pages'] > 1): ?>
-<nav aria-label="Member pagination">
-    <ul class="pagination justify-content-center">
-        <?php if ($pagination['current_page'] > 1): ?>
-        <li class="page-item">
-            <a class="page-link" href="?page=<?= $pagination['current_page'] - 1 ?>&status=<?= $_GET['status'] ?? '' ?>&church_id=<?= $_GET['church_id'] ?? '' ?>&search=<?= $_GET['search'] ?? '' ?>">Previous</a>
-        </li>
-        <?php endif; ?>
-        
-        <?php for ($i = 1; $i <= $pagination['total_pages']; $i++): ?>
-        <li class="page-item <?= $i == $pagination['current_page'] ? 'active' : '' ?>">
-            <a class="page-link" href="?page=<?= $i ?>&status=<?= $_GET['status'] ?? '' ?>&church_id=<?= $_GET['church_id'] ?? '' ?>&search=<?= $_GET['search'] ?? '' ?>"><?= $i ?></a>
-        </li>
-        <?php endfor; ?>
-        
-        <?php if ($pagination['current_page'] < $pagination['total_pages']): ?>
-        <li class="page-item">
-            <a class="page-link" href="?page=<?= $pagination['current_page'] + 1 ?>&status=<?= $_GET['status'] ?? '' ?>&church_id=<?= $_GET['church_id'] ?? '' ?>&search=<?= $_GET['search'] ?? '' ?>">Next</a>
-        </li>
-        <?php endif; ?>
-    </ul>
-</nav>
-<?php endif; ?>
 
 <script>
 function deleteMember(id, name) {
@@ -165,16 +162,6 @@ function deleteMember(id, name) {
         form.action = `/member/delete/${id}`;
         document.body.appendChild(form);
         form.submit();
-    }
-}
-
-function getStatusBadgeClass(status) {
-    switch (status) {
-        case 'active': return 'success';
-        case 'inactive': return 'secondary';
-        case 'pending': return 'warning';
-        case 'suspended': return 'danger';
-        default: return 'secondary';
     }
 }
 </script> 

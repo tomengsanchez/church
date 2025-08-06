@@ -13,65 +13,92 @@
     </div>
 </div>
 
-<div class="row">
-    <?php foreach ($churches as $church): ?>
-    <div class="col-md-6 col-lg-4 mb-4">
-        <div class="card h-100">
-            <div class="card-header">
-                <h5 class="mb-0">
-                    <i class="fas fa-church me-2"></i><?= htmlspecialchars($church['name']) ?>
-                </h5>
-            </div>
-            <div class="card-body">
-                <div class="mb-3">
-                    <strong>Address:</strong><br>
-                    <?= htmlspecialchars($church['address']) ?>
-                </div>
-                <div class="mb-3">
-                    <strong>Phone:</strong><br>
-                    <?= htmlspecialchars($church['phone']) ?>
-                </div>
-                <div class="mb-3">
-                    <strong>Email:</strong><br>
-                    <?= htmlspecialchars($church['email']) ?>
-                </div>
-                <div class="mb-3">
-                    <strong>Pastors:</strong> <?= $church['pastor_count'] ?? 0 ?><br>
-                    <strong>Members:</strong> <?= $church['member_count'] ?? 0 ?>
-                </div>
-            </div>
-            <div class="card-footer">
-                <div class="btn-group w-100" role="group">
-                    <a href="/church/edit/<?= $church['id'] ?>" class="btn btn-outline-primary btn-sm">
-                        <i class="fas fa-edit me-1"></i>Edit
-                    </a>
-                    <button type="button" class="btn btn-outline-danger btn-sm" 
-                            onclick="deleteChurch(<?= $church['id'] ?>, '<?= htmlspecialchars($church['name']) ?>')">
-                        <i class="fas fa-trash me-1"></i>Delete
-                    </button>
-                </div>
-            </div>
-        </div>
-    </div>
-    <?php endforeach; ?>
-</div>
-
-<?php if (empty($churches)): ?>
+<!-- Churches Table -->
 <div class="row">
     <div class="col-12">
         <div class="card">
-            <div class="card-body text-center py-5">
-                <i class="fas fa-church fa-3x text-muted mb-3"></i>
-                <h4 class="text-muted">No Churches Found</h4>
-                <p class="text-muted">Start by adding your first church.</p>
-                <a href="/church/create" class="btn btn-primary">
-                    <i class="fas fa-plus me-2"></i>Add Church
-                </a>
+            <div class="card-body">
+                <?php if (!empty($churches)): ?>
+                <div class="table-responsive">
+                    <table class="table table-striped table-hover">
+                        <thead>
+                            <tr>
+                                <th>Name</th>
+                                <th>Address</th>
+                                <th>Phone</th>
+                                <th>Email</th>
+                                <th>Pastor</th>
+                                <th>Created</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <?php foreach ($churches as $church): ?>
+                            <tr>
+                                <td>
+                                    <strong><?= htmlspecialchars($church['name'] ?? '') ?></strong>
+                                </td>
+                                <td><?= htmlspecialchars($church['address'] ?? '') ?></td>
+                                <td><?= htmlspecialchars($church['phone'] ?? '') ?></td>
+                                <td><?= htmlspecialchars($church['email'] ?? '') ?></td>
+                                <td><?= htmlspecialchars($church['pastor_name'] ?? 'Not Assigned') ?></td>
+                                <td><?= date('M j, Y', strtotime($church['created_at'])) ?></td>
+                                <td>
+                                    <div class="btn-group" role="group">
+                                        <a href="/church/edit/<?= $church['id'] ?>" class="btn btn-outline-primary btn-sm" title="Edit">
+                                            <i class="fas fa-edit"></i>
+                                        </a>
+                                        <button type="button" class="btn btn-outline-danger btn-sm" 
+                                                onclick="deleteChurch(<?= $church['id'] ?>, '<?= htmlspecialchars($church['name'] ?? '') ?>')" title="Delete">
+                                            <i class="fas fa-trash"></i>
+                                        </button>
+                                    </div>
+                                </td>
+                            </tr>
+                            <?php endforeach; ?>
+                        </tbody>
+                    </table>
+                </div>
+                
+                <!-- Pagination -->
+                <?php if (isset($pagination) && $pagination['total_pages'] > 1): ?>
+                <nav aria-label="Church pagination" class="mt-4">
+                    <ul class="pagination justify-content-center">
+                        <?php if ($pagination['current_page'] > 1): ?>
+                        <li class="page-item">
+                            <a class="page-link" href="?page=<?= $pagination['current_page'] - 1 ?>">Previous</a>
+                        </li>
+                        <?php endif; ?>
+                        
+                        <?php for ($i = 1; $i <= $pagination['total_pages']; $i++): ?>
+                        <li class="page-item <?= $i == $pagination['current_page'] ? 'active' : '' ?>">
+                            <a class="page-link" href="?page=<?= $i ?>"><?= $i ?></a>
+                        </li>
+                        <?php endfor; ?>
+                        
+                        <?php if ($pagination['current_page'] < $pagination['total_pages']): ?>
+                        <li class="page-item">
+                            <a class="page-link" href="?page=<?= $pagination['current_page'] + 1 ?>">Next</a>
+                        </li>
+                        <?php endif; ?>
+                    </ul>
+                </nav>
+                <?php endif; ?>
+                
+                <?php else: ?>
+                <div class="text-center py-5">
+                    <i class="fas fa-church fa-3x text-muted mb-3"></i>
+                    <h4 class="text-muted">No Churches Found</h4>
+                    <p class="text-muted">Start by adding your first church.</p>
+                    <a href="/church/create" class="btn btn-primary">
+                        <i class="fas fa-plus me-2"></i>Add Church
+                    </a>
+                </div>
+                <?php endif; ?>
             </div>
         </div>
     </div>
 </div>
-<?php endif; ?>
 
 <script>
 function deleteChurch(id, name) {

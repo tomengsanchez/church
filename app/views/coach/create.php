@@ -37,7 +37,7 @@
                                 <option value="">Select Church</option>
                                 <?php foreach ($churches as $church): ?>
                                 <option value="<?= $church['id'] ?>" <?= ($data['church_id'] ?? '') == $church['id'] ? 'selected' : '' ?>>
-                                    <?= htmlspecialchars($church['name']) ?>
+                                    <?= htmlspecialchars($church['name'] ?? '') ?>
                                 </option>
                                 <?php endforeach; ?>
                             </select>
@@ -45,55 +45,21 @@
                     </div>
                     
                     <div class="row">
-                        <div class="col-md-6 mb-3">
-                            <label for="pastor_id" class="form-label">Pastor *</label>
-                            <select class="form-select" id="pastor_id" name="pastor_id" required>
-                                <option value="">Select Pastor</option>
-                                <?php foreach ($pastors as $pastor): ?>
-                                <option value="<?= $pastor['id'] ?>" <?= ($data['pastor_id'] ?? '') == $pastor['id'] ? 'selected' : '' ?>>
-                                    <?= htmlspecialchars($pastor['name']) ?> (<?= htmlspecialchars($pastor['church_name']) ?>)
-                                </option>
-                                <?php endforeach; ?>
-                            </select>
-                        </div>
-                        
                         <div class="col-md-6 mb-3">
                             <label for="password" class="form-label">Password *</label>
                             <input type="password" class="form-control" id="password" name="password" required>
                             <div class="form-text">Password must be at least 6 characters long.</div>
                         </div>
-                    </div>
-                    
-                    <div class="row">
+                        
                         <div class="col-md-6 mb-3">
                             <label for="confirm_password" class="form-label">Confirm Password *</label>
                             <input type="password" class="form-control" id="confirm_password" name="confirm_password" required>
-                        </div>
-                        
-                        <div class="col-md-6 mb-3">
-                            <label for="specialization" class="form-label">Specialization</label>
-                            <input type="text" class="form-control" id="specialization" name="specialization" 
-                                   value="<?= $data['specialization'] ?? '' ?>" placeholder="e.g., Youth Ministry, Counseling">
                         </div>
                     </div>
                     
                     <div class="mb-3">
                         <label for="address" class="form-label">Address</label>
                         <textarea class="form-control" id="address" name="address" rows="3"><?= $data['address'] ?? '' ?></textarea>
-                    </div>
-                    
-                    <div class="row">
-                        <div class="col-md-6 mb-3">
-                            <label for="date_of_birth" class="form-label">Date of Birth</label>
-                            <input type="date" class="form-control" id="date_of_birth" name="date_of_birth" 
-                                   value="<?= $data['date_of_birth'] ?? '' ?>">
-                        </div>
-                        
-                        <div class="col-md-6 mb-3">
-                            <label for="joining_date" class="form-label">Joining Date</label>
-                            <input type="date" class="form-control" id="joining_date" name="joining_date" 
-                                   value="<?= $data['joining_date'] ?? '' ?>">
-                        </div>
                     </div>
                     
                     <div class="d-flex justify-content-between">

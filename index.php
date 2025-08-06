@@ -47,6 +47,7 @@ $router->post('/church/create', [ChurchController::class, 'store']);
 $router->get('/church/edit/{id}', [ChurchController::class, 'edit']);
 $router->post('/church/edit/{id}', [ChurchController::class, 'update']);
 $router->post('/church/delete/{id}', [ChurchController::class, 'delete']);
+$router->get('/church/fix-pastors', [ChurchController::class, 'fixPastorAssignments']);
 
 // Pastor routes
 $router->get('/pastor', [PastorController::class, 'index']);
@@ -71,6 +72,7 @@ $router->post('/mentor/create', [MentorController::class, 'store']);
 $router->get('/mentor/edit/{id}', [MentorController::class, 'edit']);
 $router->post('/mentor/edit/{id}', [MentorController::class, 'update']);
 $router->post('/mentor/delete/{id}', [MentorController::class, 'delete']);
+$router->get('/mentor/coaches/{churchId}', [MentorController::class, 'getCoachesByChurch']);
 
 // Member routes
 $router->get('/member', [MemberController::class, 'index']);
@@ -80,6 +82,9 @@ $router->get('/member/edit/{id}', [MemberController::class, 'edit']);
 $router->post('/member/edit/{id}', [MemberController::class, 'update']);
 $router->post('/member/delete/{id}', [MemberController::class, 'delete']);
 $router->post('/member/status/{id}', [MemberController::class, 'updateStatus']);
+$router->get('/member/coaches/{churchId}', [MemberController::class, 'getCoachesByChurch']);
+$router->get('/member/mentors/{churchId}', [MemberController::class, 'getMentorsByChurch']);
+$router->get('/member/mentors-by-coach/{coachId}', [MemberController::class, 'getMentorsByCoach']);
 
 // Error Log routes
 $router->get('/errorlog', [ErrorLogController::class, 'index']);

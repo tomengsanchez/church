@@ -44,4 +44,10 @@ class ChurchModel extends Model
     {
         return $this->findAll(['pastor_id' => $pastorId], 'name ASC');
     }
+    
+    public function updatePastorId(int $churchId, ?int $pastorId): bool
+    {
+        $sql = "UPDATE {$this->table} SET pastor_id = ? WHERE id = ?";
+        return $this->db->query($sql, [$pastorId, $churchId])->rowCount() > 0;
+    }
 } 

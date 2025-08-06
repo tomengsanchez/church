@@ -43,10 +43,22 @@ body {
     font-weight: 600;
 }
 
+/* Table Styles */
 .table th {
     border-top: none;
     font-weight: 600;
     color: var(--charcoal);
+}
+
+/* Custom Table Header Style */
+.table thead tr {
+    background-color: #4b2c6c !important;
+}
+
+.table thead th {
+    color: var(--white) !important;
+    font-weight: bold !important;
+    border-bottom: 2px solid #4b2c6c;
 }
 
 .btn {

@@ -18,7 +18,7 @@ class CoachController extends Controller
     {
         $this->requireRole(ROLE_PASTOR);
         
-        $coaches = $this->userModel->getUsersByRole(ROLE_COACH);
+        $coaches = $this->userModel->getCoachesWithChurchesAndPastors();
         $this->view('coach/index', ['coaches' => $coaches]);
     }
     
@@ -26,7 +26,10 @@ class CoachController extends Controller
     {
         $this->requireRole(ROLE_PASTOR);
         
-        $this->view('coach/create');
+        $churchModel = new \App\Models\ChurchModel();
+        $churches = $churchModel->getAllChurches();
+        
+        $this->view('coach/create', ['churches' => $churches]);
     }
     
     public function store(): void
@@ -40,7 +43,7 @@ class CoachController extends Controller
             'phone' => $_POST['phone'] ?? '',
             'address' => $_POST['address'] ?? '',
             'role' => 'coach',
-            'church_id' => $_SESSION['church_id'],
+            'church_id' => $_POST['church_id'] ?? null,
             'status' => 'active'
         ];
         
@@ -56,7 +59,7 @@ class CoachController extends Controller
             return;
         }
         
-        $userId = $this->userModel->createUser($data);
+        $userId = $this->userModel->create($data);
         
         if ($userId) {
             flash('Coach created successfully', 'success');
@@ -78,7 +81,10 @@ class CoachController extends Controller
             $this->redirect('/coach');
         }
         
-        $this->view('coach/edit', ['coach' => $coach]);
+        $churchModel = new \App\Models\ChurchModel();
+        $churches = $churchModel->getAllChurches();
+        
+        $this->view('coach/edit', ['coach' => $coach, 'churches' => $churches]);
     }
     
     public function update(string $id): void
@@ -97,14 +103,15 @@ class CoachController extends Controller
             'name' => $_POST['name'] ?? '',
             'email' => $_POST['email'] ?? '',
             'phone' => $_POST['phone'] ?? '',
-            'address' => $_POST['address'] ?? ''
+            'address' => $_POST['address'] ?? '',
+            'church_id' => $_POST['church_id'] ?? null
         ];
         
         if (!empty($_POST['password'])) {
             $data['password'] = $_POST['password'];
         }
         
-        if ($this->userModel->updateUser($coachId, $data)) {
+        if ($this->userModel->update($coachId, $data)) {
             flash('Coach updated successfully', 'success');
             $this->redirect('/coach');
         } else {

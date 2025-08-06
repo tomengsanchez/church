@@ -37,7 +37,7 @@
                                 <option value="">Select Church</option>
                                 <?php foreach ($churches as $church): ?>
                                 <option value="<?= $church['id'] ?>" <?= ($data['church_id'] ?? '') == $church['id'] ? 'selected' : '' ?>>
-                                    <?= htmlspecialchars($church['name']) ?>
+                                    <?= htmlspecialchars($church['name'] ?? '') ?>
                                 </option>
                                 <?php endforeach; ?>
                             </select>
@@ -60,20 +60,6 @@
                     <div class="mb-3">
                         <label for="address" class="form-label">Address</label>
                         <textarea class="form-control" id="address" name="address" rows="3"><?= $data['address'] ?? '' ?></textarea>
-                    </div>
-                    
-                    <div class="row">
-                        <div class="col-md-6 mb-3">
-                            <label for="date_of_birth" class="form-label">Date of Birth</label>
-                            <input type="date" class="form-control" id="date_of_birth" name="date_of_birth" 
-                                   value="<?= $data['date_of_birth'] ?? '' ?>">
-                        </div>
-                        
-                        <div class="col-md-6 mb-3">
-                            <label for="ordination_date" class="form-label">Ordination Date</label>
-                            <input type="date" class="form-control" id="ordination_date" name="ordination_date" 
-                                   value="<?= $data['ordination_date'] ?? '' ?>">
-                        </div>
                     </div>
                     
                     <div class="d-flex justify-content-between">

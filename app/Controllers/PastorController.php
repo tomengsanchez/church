@@ -18,7 +18,7 @@ class PastorController extends Controller
     {
         $this->requireRole(ROLE_SUPER_ADMIN);
         
-        $pastors = $this->userModel->getUsersByRole(ROLE_PASTOR);
+        $pastors = $this->userModel->getPastorsWithChurches();
         $this->view('pastor/index', ['pastors' => $pastors]);
     }
     
@@ -26,7 +26,10 @@ class PastorController extends Controller
     {
         $this->requireRole(ROLE_SUPER_ADMIN);
         
-        $this->view('pastor/create');
+        $churchModel = new \App\Models\ChurchModel();
+        $churches = $churchModel->getAllChurches();
+        
+        $this->view('pastor/create', ['churches' => $churches]);
     }
     
     public function store(): void
@@ -56,9 +59,15 @@ class PastorController extends Controller
             return;
         }
         
-        $userId = $this->userModel->createUser($data);
+        $userId = $this->userModel->create($data);
         
         if ($userId) {
+            // Update the church's pastor_id if a church is assigned
+            if (!empty($data['church_id'])) {
+                $churchModel = new \App\Models\ChurchModel();
+                $churchModel->updatePastorId((int)$data['church_id'], $userId);
+            }
+            
             flash('Pastor created successfully', 'success');
             $this->redirect('/pastor');
         } else {
@@ -78,7 +87,10 @@ class PastorController extends Controller
             $this->redirect('/pastor');
         }
         
-        $this->view('pastor/edit', ['pastor' => $pastor]);
+        $churchModel = new \App\Models\ChurchModel();
+        $churches = $churchModel->getAllChurches();
+        
+        $this->view('pastor/edit', ['pastor' => $pastor, 'churches' => $churches]);
     }
     
     public function update(string $id): void
@@ -105,7 +117,20 @@ class PastorController extends Controller
             $data['password'] = $_POST['password'];
         }
         
-        if ($this->userModel->updateUser($pastorId, $data)) {
+        if ($this->userModel->update($pastorId, $data)) {
+            // Update the church's pastor_id if church assignment changed
+            $churchModel = new \App\Models\ChurchModel();
+            
+            // First, clear the pastor_id from the old church (if any)
+            if (!empty($pastor['church_id'])) {
+                $churchModel->updatePastorId((int)$pastor['church_id'], null);
+            }
+            
+            // Then, set the pastor_id for the new church (if any)
+            if (!empty($data['church_id'])) {
+                $churchModel->updatePastorId((int)$data['church_id'], $pastorId);
+            }
+            
             flash('Pastor updated successfully', 'success');
             $this->redirect('/pastor');
         } else {
@@ -127,6 +152,12 @@ class PastorController extends Controller
         }
         
         if ($this->userModel->delete($pastorId)) {
+            // Clear the pastor_id from the church if this pastor was assigned to one
+            if (!empty($pastor['church_id'])) {
+                $churchModel = new \App\Models\ChurchModel();
+                $churchModel->updatePastorId((int)$pastor['church_id'], null);
+            }
+            
             flash('Pastor deleted successfully', 'success');
         } else {
             flash('Failed to delete pastor', 'error');

@@ -37,7 +37,7 @@
                                 <option value="">Select Church</option>
                                 <?php foreach ($churches as $church): ?>
                                 <option value="<?= $church['id'] ?>" <?= ($data['church_id'] ?? '') == $church['id'] ? 'selected' : '' ?>>
-                                    <?= htmlspecialchars($church['name']) ?>
+                                    <?= htmlspecialchars($church['name'] ?? '') ?>
                                 </option>
                                 <?php endforeach; ?>
                             </select>
@@ -46,43 +46,23 @@
                     
                     <div class="row">
                         <div class="col-md-6 mb-3">
-                            <label for="pastor_id" class="form-label">Pastor *</label>
-                            <select class="form-select" id="pastor_id" name="pastor_id" required>
-                                <option value="">Select Pastor</option>
-                                <?php foreach ($pastors as $pastor): ?>
-                                <option value="<?= $pastor['id'] ?>" <?= ($data['pastor_id'] ?? '') == $pastor['id'] ? 'selected' : '' ?>>
-                                    <?= htmlspecialchars($pastor['name']) ?> (<?= htmlspecialchars($pastor['church_name']) ?>)
-                                </option>
-                                <?php endforeach; ?>
-                            </select>
-                        </div>
-                        
-                        <div class="col-md-6 mb-3">
-                            <label for="coach_id" class="form-label">Coach *</label>
-                            <select class="form-select" id="coach_id" name="coach_id" required>
+                            <label for="coach_id" class="form-label">Coach</label>
+                            <select class="form-select" id="coach_id" name="coach_id">
                                 <option value="">Select Coach</option>
-                                <?php foreach ($coaches as $coach): ?>
-                                <option value="<?= $coach['id'] ?>" <?= ($data['coach_id'] ?? '') == $coach['id'] ? 'selected' : '' ?>>
-                                    <?= htmlspecialchars($coach['name']) ?> (<?= htmlspecialchars($coach['church_name']) ?>)
-                                </option>
-                                <?php endforeach; ?>
                             </select>
+                            <div class="form-text">Optional: Assign a coach to this member. Select a church first.</div>
+                        </div>
+                        
+                        <div class="col-md-6 mb-3">
+                            <label for="mentor_id" class="form-label">Mentor</label>
+                            <select class="form-select" id="mentor_id" name="mentor_id">
+                                <option value="">Select Mentor</option>
+                            </select>
+                            <div class="form-text">Optional: Assign a mentor to this member. Select a coach first.</div>
                         </div>
                     </div>
                     
                     <div class="row">
-                        <div class="col-md-6 mb-3">
-                            <label for="mentor_id" class="form-label">Mentor *</label>
-                            <select class="form-select" id="mentor_id" name="mentor_id" required>
-                                <option value="">Select Mentor</option>
-                                <?php foreach ($mentors as $mentor): ?>
-                                <option value="<?= $mentor['id'] ?>" <?= ($data['mentor_id'] ?? '') == $mentor['id'] ? 'selected' : '' ?>>
-                                    <?= htmlspecialchars($mentor['name']) ?> (<?= htmlspecialchars($mentor['church_name']) ?>)
-                                </option>
-                                <?php endforeach; ?>
-                            </select>
-                        </div>
-                        
                         <div class="col-md-6 mb-3">
                             <label for="status" class="form-label">Status *</label>
                             <select class="form-select" id="status" name="status" required>
@@ -92,6 +72,11 @@
                                 <option value="suspended" <?= ($data['status'] ?? '') === 'suspended' ? 'selected' : '' ?>>Suspended</option>
                             </select>
                         </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="address" class="form-label">Address</label>
+                        <textarea class="form-control" id="address" name="address" rows="3"><?= $data['address'] ?? '' ?></textarea>
                     </div>
                     
                     <div class="row">
@@ -105,67 +90,6 @@
                             <label for="confirm_password" class="form-label">Confirm Password *</label>
                             <input type="password" class="form-control" id="confirm_password" name="confirm_password" required>
                         </div>
-                    </div>
-                    
-                    <div class="row">
-                        <div class="col-md-6 mb-3">
-                            <label for="date_of_birth" class="form-label">Date of Birth</label>
-                            <input type="date" class="form-control" id="date_of_birth" name="date_of_birth" 
-                                   value="<?= $data['date_of_birth'] ?? '' ?>">
-                        </div>
-                        
-                        <div class="col-md-6 mb-3">
-                            <label for="gender" class="form-label">Gender</label>
-                            <select class="form-select" id="gender" name="gender">
-                                <option value="">Select Gender</option>
-                                <option value="male" <?= ($data['gender'] ?? '') === 'male' ? 'selected' : '' ?>>Male</option>
-                                <option value="female" <?= ($data['gender'] ?? '') === 'female' ? 'selected' : '' ?>>Female</option>
-                                <option value="other" <?= ($data['gender'] ?? '') === 'other' ? 'selected' : '' ?>>Other</option>
-                            </select>
-                        </div>
-                    </div>
-                    
-                    <div class="mb-3">
-                        <label for="address" class="form-label">Address</label>
-                        <textarea class="form-control" id="address" name="address" rows="3"><?= $data['address'] ?? '' ?></textarea>
-                    </div>
-                    
-                    <div class="row">
-                        <div class="col-md-6 mb-3">
-                            <label for="emergency_contact" class="form-label">Emergency Contact</label>
-                            <input type="text" class="form-control" id="emergency_contact" name="emergency_contact" 
-                                   value="<?= $data['emergency_contact'] ?? '' ?>">
-                        </div>
-                        
-                        <div class="col-md-6 mb-3">
-                            <label for="emergency_phone" class="form-label">Emergency Phone</label>
-                            <input type="tel" class="form-control" id="emergency_phone" name="emergency_phone" 
-                                   value="<?= $data['emergency_phone'] ?? '' ?>">
-                        </div>
-                    </div>
-                    
-                    <div class="row">
-                        <div class="col-md-6 mb-3">
-                            <label for="occupation" class="form-label">Occupation</label>
-                            <input type="text" class="form-control" id="occupation" name="occupation" 
-                                   value="<?= $data['occupation'] ?? '' ?>">
-                        </div>
-                        
-                        <div class="col-md-6 mb-3">
-                            <label for="marital_status" class="form-label">Marital Status</label>
-                            <select class="form-select" id="marital_status" name="marital_status">
-                                <option value="">Select Status</option>
-                                <option value="single" <?= ($data['marital_status'] ?? '') === 'single' ? 'selected' : '' ?>>Single</option>
-                                <option value="married" <?= ($data['marital_status'] ?? '') === 'married' ? 'selected' : '' ?>>Married</option>
-                                <option value="divorced" <?= ($data['marital_status'] ?? '') === 'divorced' ? 'selected' : '' ?>>Divorced</option>
-                                <option value="widowed" <?= ($data['marital_status'] ?? '') === 'widowed' ? 'selected' : '' ?>>Widowed</option>
-                            </select>
-                        </div>
-                    </div>
-                    
-                    <div class="mb-3">
-                        <label for="notes" class="form-label">Notes</label>
-                        <textarea class="form-control" id="notes" name="notes" rows="3"><?= $data['notes'] ?? '' ?></textarea>
                     </div>
                     
                     <div class="d-flex justify-content-between">
@@ -194,17 +118,31 @@ document.getElementById('confirm_password').addEventListener('input', function()
     }
 });
 
-// Filter coaches based on selected pastor
-document.getElementById('pastor_id').addEventListener('change', function() {
-    const pastorId = this.value;
+// Filter coaches based on selected church
+document.getElementById('church_id').addEventListener('change', function() {
+    const churchId = this.value;
     const coachSelect = document.getElementById('coach_id');
+    const mentorSelect = document.getElementById('mentor_id');
     
-    // Reset coach selection
+    // Reset selections
     coachSelect.innerHTML = '<option value="">Select Coach</option>';
+    mentorSelect.innerHTML = '<option value="">Select Mentor</option>';
     
-    if (pastorId) {
-        // Filter coaches by pastor (this would need AJAX in a real implementation)
-        // For now, we'll just show all coaches
+    if (churchId) {
+        // Fetch coaches for the selected church
+        fetch(`/member/coaches/${churchId}`)
+            .then(response => response.json())
+            .then(coaches => {
+                coaches.forEach(coach => {
+                    const option = document.createElement('option');
+                    option.value = coach.id;
+                    option.textContent = coach.name;
+                    coachSelect.appendChild(option);
+                });
+            })
+            .catch(error => {
+                console.error('Error fetching coaches:', error);
+            });
     }
 });
 
@@ -217,8 +155,20 @@ document.getElementById('coach_id').addEventListener('change', function() {
     mentorSelect.innerHTML = '<option value="">Select Mentor</option>';
     
     if (coachId) {
-        // Filter mentors by coach (this would need AJAX in a real implementation)
-        // For now, we'll just show all mentors
+        // Fetch mentors for the selected coach
+        fetch(`/member/mentors-by-coach/${coachId}`)
+            .then(response => response.json())
+            .then(mentors => {
+                mentors.forEach(mentor => {
+                    const option = document.createElement('option');
+                    option.value = mentor.id;
+                    option.textContent = mentor.name;
+                    mentorSelect.appendChild(option);
+                });
+            })
+            .catch(error => {
+                console.error('Error fetching mentors:', error);
+            });
     }
 });
 </script> 

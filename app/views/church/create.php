@@ -35,25 +35,6 @@
                         <textarea class="form-control" id="address" name="address" rows="3" required><?= $data['address'] ?? '' ?></textarea>
                     </div>
                     
-                    <div class="row">
-                        <div class="col-md-6 mb-3">
-                            <label for="website" class="form-label">Website</label>
-                            <input type="url" class="form-control" id="website" name="website" 
-                                   value="<?= $data['website'] ?? '' ?>">
-                        </div>
-                        
-                        <div class="col-md-6 mb-3">
-                            <label for="founded_date" class="form-label">Founded Date</label>
-                            <input type="date" class="form-control" id="founded_date" name="founded_date" 
-                                   value="<?= $data['founded_date'] ?? '' ?>">
-                        </div>
-                    </div>
-                    
-                    <div class="mb-3">
-                        <label for="description" class="form-label">Description</label>
-                        <textarea class="form-control" id="description" name="description" rows="4"><?= $data['description'] ?? '' ?></textarea>
-                    </div>
-                    
                     <div class="d-flex justify-content-between">
                         <a href="/church" class="btn btn-outline-secondary">
                             <i class="fas fa-arrow-left me-2"></i>Back to Churches

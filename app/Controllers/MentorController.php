@@ -18,7 +18,7 @@ class MentorController extends Controller
     {
         $this->requireRole(ROLE_COACH);
         
-        $mentors = $this->userModel->getUsersByRole(ROLE_MENTOR);
+        $mentors = $this->userModel->getMentorsWithChurchesAndPastors();
         $this->view('mentor/index', ['mentors' => $mentors]);
     }
     
@@ -26,7 +26,10 @@ class MentorController extends Controller
     {
         $this->requireRole(ROLE_COACH);
         
-        $this->view('mentor/create');
+        $churchModel = new \App\Models\ChurchModel();
+        $churches = $churchModel->getAllChurches();
+        
+        $this->view('mentor/create', ['churches' => $churches]);
     }
     
     public function store(): void
@@ -40,7 +43,7 @@ class MentorController extends Controller
             'phone' => $_POST['phone'] ?? '',
             'address' => $_POST['address'] ?? '',
             'role' => 'mentor',
-            'church_id' => $_SESSION['church_id'],
+            'church_id' => $_POST['church_id'] ?? null,
             'status' => 'active'
         ];
         
@@ -56,9 +59,14 @@ class MentorController extends Controller
             return;
         }
         
-        $userId = $this->userModel->createUser($data);
+        $userId = $this->userModel->create($data);
         
         if ($userId) {
+            // Create hierarchy relationship with coach if selected
+            if (!empty($_POST['coach_id'])) {
+                $this->userModel->createHierarchyRelationship($userId, (int)$_POST['coach_id']);
+            }
+            
             flash('Mentor created successfully', 'success');
             $this->redirect('/mentor');
         } else {
@@ -78,7 +86,17 @@ class MentorController extends Controller
             $this->redirect('/mentor');
         }
         
-        $this->view('mentor/edit', ['mentor' => $mentor]);
+        $churchModel = new \App\Models\ChurchModel();
+        $churches = $churchModel->getAllChurches();
+        
+        // Get current coach assignment
+        $currentCoach = $this->userModel->getHierarchyParent((int) $id);
+        
+        $this->view('mentor/edit', [
+            'mentor' => $mentor, 
+            'churches' => $churches,
+            'currentCoach' => $currentCoach
+        ]);
     }
     
     public function update(string $id): void
@@ -97,14 +115,19 @@ class MentorController extends Controller
             'name' => $_POST['name'] ?? '',
             'email' => $_POST['email'] ?? '',
             'phone' => $_POST['phone'] ?? '',
-            'address' => $_POST['address'] ?? ''
+            'address' => $_POST['address'] ?? '',
+            'church_id' => $_POST['church_id'] ?? null
         ];
         
         if (!empty($_POST['password'])) {
             $data['password'] = $_POST['password'];
         }
         
-        if ($this->userModel->updateUser($mentorId, $data)) {
+        if ($this->userModel->update($mentorId, $data)) {
+            // Update hierarchy relationship with coach
+            $coachId = !empty($_POST['coach_id']) ? (int)$_POST['coach_id'] : null;
+            $this->userModel->updateHierarchyRelationship($mentorId, $coachId);
+            
             flash('Mentor updated successfully', 'success');
             $this->redirect('/mentor');
         } else {
@@ -126,11 +149,25 @@ class MentorController extends Controller
         }
         
         if ($this->userModel->delete($mentorId)) {
+            // Clear hierarchy relationships
+            $this->userModel->updateHierarchyRelationship($mentorId, null);
+            
             flash('Mentor deleted successfully', 'success');
         } else {
             flash('Failed to delete mentor', 'error');
         }
         
         $this->redirect('/mentor');
+    }
+    
+    public function getCoachesByChurch(string $churchId): void
+    {
+        $this->requireRole(ROLE_COACH);
+        
+        $coaches = $this->userModel->getCoachesByChurch((int) $churchId);
+        
+        header('Content-Type: application/json');
+        echo json_encode($coaches);
+        exit;
     }
 } 

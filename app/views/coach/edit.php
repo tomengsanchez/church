@@ -14,13 +14,13 @@
                         <div class="col-md-6 mb-3">
                             <label for="name" class="form-label">Full Name *</label>
                             <input type="text" class="form-control" id="name" name="name" 
-                                   value="<?= htmlspecialchars($coach['name']) ?>" required>
+                                   value="<?= htmlspecialchars($coach['name'] ?? '') ?>" required>
                         </div>
                         
                         <div class="col-md-6 mb-3">
                             <label for="email" class="form-label">Email Address *</label>
                             <input type="email" class="form-control" id="email" name="email" 
-                                   value="<?= htmlspecialchars($coach['email']) ?>" required>
+                                   value="<?= htmlspecialchars($coach['email'] ?? '') ?>" required>
                         </div>
                     </div>
                     
@@ -28,7 +28,7 @@
                         <div class="col-md-6 mb-3">
                             <label for="phone" class="form-label">Phone Number</label>
                             <input type="tel" class="form-control" id="phone" name="phone" 
-                                   value="<?= htmlspecialchars($coach['phone']) ?>">
+                                   value="<?= htmlspecialchars($coach['phone'] ?? '') ?>">
                         </div>
                         
                         <div class="col-md-6 mb-3">
@@ -37,7 +37,7 @@
                                 <option value="">Select Church</option>
                                 <?php foreach ($churches as $church): ?>
                                 <option value="<?= $church['id'] ?>" <?= $coach['church_id'] == $church['id'] ? 'selected' : '' ?>>
-                                    <?= htmlspecialchars($church['name']) ?>
+                                    <?= htmlspecialchars($church['name'] ?? '') ?>
                                 </option>
                                 <?php endforeach; ?>
                             </select>
@@ -45,55 +45,21 @@
                     </div>
                     
                     <div class="row">
-                        <div class="col-md-6 mb-3">
-                            <label for="pastor_id" class="form-label">Pastor *</label>
-                            <select class="form-select" id="pastor_id" name="pastor_id" required>
-                                <option value="">Select Pastor</option>
-                                <?php foreach ($pastors as $pastor): ?>
-                                <option value="<?= $pastor['id'] ?>" <?= $coach['pastor_id'] == $pastor['id'] ? 'selected' : '' ?>>
-                                    <?= htmlspecialchars($pastor['name']) ?> (<?= htmlspecialchars($pastor['church_name']) ?>)
-                                </option>
-                                <?php endforeach; ?>
-                            </select>
-                        </div>
-                        
                         <div class="col-md-6 mb-3">
                             <label for="password" class="form-label">New Password</label>
                             <input type="password" class="form-control" id="password" name="password">
                             <div class="form-text">Leave blank to keep current password.</div>
                         </div>
-                    </div>
-                    
-                    <div class="row">
+                        
                         <div class="col-md-6 mb-3">
                             <label for="confirm_password" class="form-label">Confirm New Password</label>
                             <input type="password" class="form-control" id="confirm_password" name="confirm_password">
-                        </div>
-                        
-                        <div class="col-md-6 mb-3">
-                            <label for="specialization" class="form-label">Specialization</label>
-                            <input type="text" class="form-control" id="specialization" name="specialization" 
-                                   value="<?= htmlspecialchars($coach['specialization']) ?>" placeholder="e.g., Youth Ministry, Counseling">
                         </div>
                     </div>
                     
                     <div class="mb-3">
                         <label for="address" class="form-label">Address</label>
-                        <textarea class="form-control" id="address" name="address" rows="3"><?= htmlspecialchars($coach['address']) ?></textarea>
-                    </div>
-                    
-                    <div class="row">
-                        <div class="col-md-6 mb-3">
-                            <label for="date_of_birth" class="form-label">Date of Birth</label>
-                            <input type="date" class="form-control" id="date_of_birth" name="date_of_birth" 
-                                   value="<?= htmlspecialchars($coach['date_of_birth']) ?>">
-                        </div>
-                        
-                        <div class="col-md-6 mb-3">
-                            <label for="joining_date" class="form-label">Joining Date</label>
-                            <input type="date" class="form-control" id="joining_date" name="joining_date" 
-                                   value="<?= htmlspecialchars($coach['joining_date']) ?>">
-                        </div>
+                        <textarea class="form-control" id="address" name="address" rows="3"><?= htmlspecialchars($coach['address'] ?? '') ?></textarea>
                     </div>
                     
                     <div class="d-flex justify-content-between">
