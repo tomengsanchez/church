@@ -149,6 +149,19 @@ class UserModel extends Model
         return $this->db->fetchAll($sql, [$churchId]);
     }
     
+    public function getMentorsWithChurchesAndPastorsByCoach(int $coachId): array
+    {
+        $sql = "SELECT u.*, c.name as church_name, p.name as pastor_name, co.name as coach_name 
+                FROM {$this->table} u 
+                LEFT JOIN churches c ON u.church_id = c.id 
+                LEFT JOIN users p ON c.pastor_id = p.id 
+                LEFT JOIN hierarchy h ON u.id = h.user_id 
+                LEFT JOIN users co ON h.parent_id = co.id AND co.role = 'coach'
+                WHERE u.role = 'mentor' AND h.parent_id = ? 
+                ORDER BY u.name ASC";
+        return $this->db->fetchAll($sql, [$coachId]);
+    }
+    
     public function getCoachesForSelection(): array
     {
         $sql = "SELECT u.id, u.name, c.name as church_name 

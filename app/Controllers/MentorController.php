@@ -38,13 +38,18 @@ class MentorController extends Controller
         if ($userRole === ROLE_SUPER_ADMIN) {
             // Super admin can see all mentors
             $mentors = $this->userModel->getMentorsWithChurchesAndPastors();
-        } else {
-            // Pastors and coaches can only see mentors from their church
+        } elseif ($userRole === ROLE_PASTOR) {
+            // Pastors can see all mentors from their church
             if ($churchId) {
                 $mentors = $this->userModel->getMentorsWithChurchesAndPastorsByChurch((int)$churchId);
             } else {
                 $mentors = [];
             }
+        } elseif ($userRole === ROLE_COACH) {
+            // Coaches can only see mentors assigned to them
+            $mentors = $this->userModel->getMentorsWithChurchesAndPastorsByCoach((int)$_SESSION['user_id']);
+        } else {
+            $mentors = [];
         }
         
         $this->view('mentor/index', ['mentors' => $mentors]);
@@ -76,13 +81,15 @@ class MentorController extends Controller
         if ($userRole === ROLE_SUPER_ADMIN) {
             // Super admin can create mentors for any church
             $churches = $churchModel->getAllChurches();
-        } else {
+        } elseif ($userRole === ROLE_PASTOR || $userRole === ROLE_COACH) {
             // Pastors and coaches can only create mentors for their own church
             if ($churchId) {
                 $churches = [$churchModel->findById($churchId)];
             } else {
                 $churches = [];
             }
+        } else {
+            $churches = [];
         }
         
         $this->view('mentor/create', ['churches' => $churches]);
@@ -184,10 +191,21 @@ class MentorController extends Controller
         }
         
         // Check if pastor/coach can edit this mentor
-        if ($userRole !== ROLE_SUPER_ADMIN && $mentor['church_id'] != $churchId) {
-            flash('You can only edit mentors from your own church', 'error');
-            $this->redirect('/mentor');
-            return;
+        if ($userRole === ROLE_PASTOR) {
+            // Pastors can only edit mentors from their own church
+            if ($mentor['church_id'] != $churchId) {
+                flash('You can only edit mentors from your own church', 'error');
+                $this->redirect('/mentor');
+                return;
+            }
+        } elseif ($userRole === ROLE_COACH) {
+            // Coaches can only edit mentors assigned to them
+            $currentCoach = $this->userModel->getHierarchyParent((int) $id);
+            if (!$currentCoach || $currentCoach['id'] != $_SESSION['user_id']) {
+                flash('You can only edit mentors assigned to you', 'error');
+                $this->redirect('/mentor');
+                return;
+            }
         }
         
         $churchModel = new \App\Models\ChurchModel();
@@ -195,13 +213,15 @@ class MentorController extends Controller
         if ($userRole === ROLE_SUPER_ADMIN) {
             // Super admin can edit mentors for any church
             $churches = $churchModel->getAllChurches();
-        } else {
+        } elseif ($userRole === ROLE_PASTOR || $userRole === ROLE_COACH) {
             // Pastors and coaches can only edit mentors for their own church
             if ($churchId) {
                 $churches = [$churchModel->findById($churchId)];
             } else {
                 $churches = [];
             }
+        } else {
+            $churches = [];
         }
         
         // Get current coach assignment
@@ -244,10 +264,21 @@ class MentorController extends Controller
         }
         
         // Check if pastor/coach can edit this mentor
-        if ($userRole !== ROLE_SUPER_ADMIN && $mentor['church_id'] != $churchId) {
-            flash('You can only edit mentors from your own church', 'error');
-            $this->redirect('/mentor');
-            return;
+        if ($userRole === ROLE_PASTOR) {
+            // Pastors can only edit mentors from their own church
+            if ($mentor['church_id'] != $churchId) {
+                flash('You can only edit mentors from your own church', 'error');
+                $this->redirect('/mentor');
+                return;
+            }
+        } elseif ($userRole === ROLE_COACH) {
+            // Coaches can only edit mentors assigned to them
+            $currentCoach = $this->userModel->getHierarchyParent((int) $id);
+            if (!$currentCoach || $currentCoach['id'] != $_SESSION['user_id']) {
+                flash('You can only edit mentors assigned to you', 'error');
+                $this->redirect('/mentor');
+                return;
+            }
         }
         
         $data = [
@@ -259,10 +290,17 @@ class MentorController extends Controller
         ];
         
         // Validate that pastors and coaches can only update mentors for their own church
-        if ($userRole !== ROLE_SUPER_ADMIN && $data['church_id'] != $churchId) {
+        if ($userRole === ROLE_PASTOR && $data['church_id'] != $churchId) {
             flash('You can only update mentors for your own church', 'error');
             $this->redirect('/mentor/edit/' . $mentorId);
             return;
+        } elseif ($userRole === ROLE_COACH) {
+            // Coaches can only update mentors assigned to them (church_id should be the same)
+            if ($data['church_id'] != $churchId) {
+                flash('You can only update mentors for your own church', 'error');
+                $this->redirect('/mentor/edit/' . $mentorId);
+                return;
+            }
         }
         
         if (!empty($_POST['password'])) {
@@ -312,10 +350,21 @@ class MentorController extends Controller
         }
         
         // Check if pastor/coach can delete this mentor
-        if ($userRole !== ROLE_SUPER_ADMIN && $mentor['church_id'] != $churchId) {
-            flash('You can only delete mentors from your own church', 'error');
-            $this->redirect('/mentor');
-            return;
+        if ($userRole === ROLE_PASTOR) {
+            // Pastors can only delete mentors from their own church
+            if ($mentor['church_id'] != $churchId) {
+                flash('You can only delete mentors from your own church', 'error');
+                $this->redirect('/mentor');
+                return;
+            }
+        } elseif ($userRole === ROLE_COACH) {
+            // Coaches can only delete mentors assigned to them
+            $currentCoach = $this->userModel->getHierarchyParent((int) $id);
+            if (!$currentCoach || $currentCoach['id'] != $_SESSION['user_id']) {
+                flash('You can only delete mentors assigned to you', 'error');
+                $this->redirect('/mentor');
+                return;
+            }
         }
         
         if ($this->userModel->delete($mentorId)) {

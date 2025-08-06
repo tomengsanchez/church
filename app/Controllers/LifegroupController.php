@@ -46,6 +46,9 @@ class LifegroupController extends Controller
             if ($churchId) {
                 $lifegroups = $this->lifegroupModel->getLifegroupsByChurch((int)$churchId);
             }
+        } elseif ($userRole === ROLE_COACH) {
+            // Coaches can only see lifegroups managed by mentors assigned to them
+            $lifegroups = $this->lifegroupModel->getLifegroupsByCoach($userId);
         } elseif ($userRole === ROLE_MENTOR) {
             // Mentors can see their own lifegroups
             $lifegroups = $this->lifegroupModel->getLifegroupsByMentor($userId);
@@ -64,10 +67,16 @@ class LifegroupController extends Controller
     
     public function create(): void
     {
-        $this->requireRole(ROLE_MENTOR);
+        $this->requireAuth();
+        
+        $userRole = $this->getUserRole();
+        
+        // Allow super admins, pastors, coaches and mentors to create lifegroups
+        if (!in_array($userRole, [ROLE_SUPER_ADMIN, ROLE_PASTOR, ROLE_COACH, ROLE_MENTOR])) {
+            $this->redirect('/dashboard');
+        }
         
         $userId = $_SESSION['user_id'];
-        $userRole = $this->getUserRole();
         $churchId = $_SESSION['church_id'] ?? null;
         
         // If church_id is not in session, get it from the database
@@ -100,7 +109,13 @@ class LifegroupController extends Controller
             return;
         }
         
-        $mentors = $this->lifegroupModel->getAvailableMentors((int)$churchId);
+        if ($userRole === ROLE_COACH) {
+            // Coaches can only create lifegroups for mentors assigned to them
+            $mentors = $this->userModel->getMentorsByCoach($userId);
+        } else {
+            // Pastors and mentors can see all mentors from their church
+            $mentors = $this->lifegroupModel->getAvailableMentors((int)$churchId);
+        }
         
         $this->view('lifegroup/create', [
             'title' => 'Create Lifegroup',
@@ -112,10 +127,16 @@ class LifegroupController extends Controller
     
     public function store(): void
     {
-        $this->requireRole(ROLE_MENTOR);
+        $this->requireAuth();
+        
+        $userRole = $this->getUserRole();
+        
+        // Allow super admins, pastors, coaches and mentors to create lifegroups
+        if (!in_array($userRole, [ROLE_SUPER_ADMIN, ROLE_PASTOR, ROLE_COACH, ROLE_MENTOR])) {
+            $this->redirect('/dashboard');
+        }
         
         $userId = $_SESSION['user_id'];
-        $userRole = $this->getUserRole();
         $churchId = $_SESSION['church_id'] ?? null;
         
         // If church_id is not in session, get it from the database
@@ -162,6 +183,17 @@ class LifegroupController extends Controller
             return;
         }
         
+        // Check if coach can create lifegroup for this mentor
+        if ($userRole === ROLE_COACH) {
+            $mentors = $this->userModel->getMentorsByCoach($userId);
+            $mentorIds = array_column($mentors, 'id');
+            if (!in_array($data['mentor_id'], $mentorIds)) {
+                setFlash('error', 'You can only create lifegroups for mentors assigned to you');
+                $this->redirect('/lifegroup/create');
+                return;
+            }
+        }
+        
         if ($this->lifegroupModel->create($data)) {
             setFlash('success', 'Lifegroup created successfully');
             $this->redirect('/lifegroup');
@@ -186,14 +218,45 @@ class LifegroupController extends Controller
         $userRole = $this->getUserRole();
         $userId = $_SESSION['user_id'];
         
-        if ($userRole !== ROLE_SUPER_ADMIN && $lifegroup['mentor_id'] != $userId) {
+        if ($userRole === ROLE_SUPER_ADMIN) {
+            // Super admin can edit any lifegroup
+        } elseif ($userRole === ROLE_PASTOR) {
+            // Pastors can edit lifegroups from their church
+            if ($lifegroup['church_id'] != $_SESSION['church_id']) {
+                setFlash('error', 'You do not have permission to edit this lifegroup');
+                $this->redirect('/lifegroup');
+                return;
+            }
+        } elseif ($userRole === ROLE_COACH) {
+            // Coaches can only edit lifegroups managed by mentors assigned to them
+            $mentors = $this->userModel->getMentorsByCoach($userId);
+            $mentorIds = array_column($mentors, 'id');
+            if (!in_array($lifegroup['mentor_id'], $mentorIds)) {
+                setFlash('error', 'You do not have permission to edit this lifegroup');
+                $this->redirect('/lifegroup');
+                return;
+            }
+        } elseif ($userRole === ROLE_MENTOR) {
+            // Mentors can only edit their own lifegroups
+            if ($lifegroup['mentor_id'] != $userId) {
+                setFlash('error', 'You do not have permission to edit this lifegroup');
+                $this->redirect('/lifegroup');
+                return;
+            }
+        } else {
             setFlash('error', 'You do not have permission to edit this lifegroup');
             $this->redirect('/lifegroup');
             return;
         }
         
         $churchId = $lifegroup['church_id'];
-        $mentors = $this->lifegroupModel->getAvailableMentors($churchId);
+        if ($userRole === ROLE_COACH) {
+            // Coaches can only assign mentors assigned to them
+            $mentors = $this->userModel->getMentorsByCoach($userId);
+        } else {
+            // Pastors and mentors can see all mentors from their church
+            $mentors = $this->lifegroupModel->getAvailableMentors($churchId);
+        }
         
         $this->view('lifegroup/edit', [
             'title' => 'Edit Lifegroup',
@@ -217,7 +280,32 @@ class LifegroupController extends Controller
         $userRole = $this->getUserRole();
         $userId = $_SESSION['user_id'];
         
-        if ($userRole !== ROLE_SUPER_ADMIN && $lifegroup['mentor_id'] != $userId) {
+        if ($userRole === ROLE_SUPER_ADMIN) {
+            // Super admin can edit any lifegroup
+        } elseif ($userRole === ROLE_PASTOR) {
+            // Pastors can edit lifegroups from their church
+            if ($lifegroup['church_id'] != $_SESSION['church_id']) {
+                setFlash('error', 'You do not have permission to edit this lifegroup');
+                $this->redirect('/lifegroup');
+                return;
+            }
+        } elseif ($userRole === ROLE_COACH) {
+            // Coaches can only edit lifegroups managed by mentors assigned to them
+            $mentors = $this->userModel->getMentorsByCoach($userId);
+            $mentorIds = array_column($mentors, 'id');
+            if (!in_array($lifegroup['mentor_id'], $mentorIds)) {
+                setFlash('error', 'You do not have permission to edit this lifegroup');
+                $this->redirect('/lifegroup');
+                return;
+            }
+        } elseif ($userRole === ROLE_MENTOR) {
+            // Mentors can only edit their own lifegroups
+            if ($lifegroup['mentor_id'] != $userId) {
+                setFlash('error', 'You do not have permission to edit this lifegroup');
+                $this->redirect('/lifegroup');
+                return;
+            }
+        } else {
             setFlash('error', 'You do not have permission to edit this lifegroup');
             $this->redirect('/lifegroup');
             return;
@@ -247,6 +335,17 @@ class LifegroupController extends Controller
             return;
         }
         
+        // Check if coach can assign this mentor
+        if ($userRole === ROLE_COACH) {
+            $mentors = $this->userModel->getMentorsByCoach($userId);
+            $mentorIds = array_column($mentors, 'id');
+            if (!in_array($data['mentor_id'], $mentorIds)) {
+                setFlash('error', 'You can only assign mentors assigned to you');
+                $this->redirect("/lifegroup/edit/{$id}");
+                return;
+            }
+        }
+        
         if ($this->lifegroupModel->update($id, $data)) {
             setFlash('success', 'Lifegroup updated successfully');
             $this->redirect('/lifegroup');
@@ -271,7 +370,32 @@ class LifegroupController extends Controller
         $userRole = $this->getUserRole();
         $userId = $_SESSION['user_id'];
         
-        if ($userRole !== ROLE_SUPER_ADMIN && $lifegroup['mentor_id'] != $userId) {
+        if ($userRole === ROLE_SUPER_ADMIN) {
+            // Super admin can delete any lifegroup
+        } elseif ($userRole === ROLE_PASTOR) {
+            // Pastors can delete lifegroups from their church
+            if ($lifegroup['church_id'] != $_SESSION['church_id']) {
+                setFlash('error', 'You do not have permission to delete this lifegroup');
+                $this->redirect('/lifegroup');
+                return;
+            }
+        } elseif ($userRole === ROLE_COACH) {
+            // Coaches can only delete lifegroups managed by mentors assigned to them
+            $mentors = $this->userModel->getMentorsByCoach($userId);
+            $mentorIds = array_column($mentors, 'id');
+            if (!in_array($lifegroup['mentor_id'], $mentorIds)) {
+                setFlash('error', 'You do not have permission to delete this lifegroup');
+                $this->redirect('/lifegroup');
+                return;
+            }
+        } elseif ($userRole === ROLE_MENTOR) {
+            // Mentors can only delete their own lifegroups
+            if ($lifegroup['mentor_id'] != $userId) {
+                setFlash('error', 'You do not have permission to delete this lifegroup');
+                $this->redirect('/lifegroup');
+                return;
+            }
+        } else {
             setFlash('error', 'You do not have permission to delete this lifegroup');
             $this->redirect('/lifegroup');
             return;
@@ -293,6 +417,41 @@ class LifegroupController extends Controller
         $lifegroup = $this->lifegroupModel->getLifegroupWithDetails($id);
         if (!$lifegroup) {
             setFlash('error', 'Lifegroup not found');
+            $this->redirect('/lifegroup');
+            return;
+        }
+        
+        // Check permissions
+        $userRole = $this->getUserRole();
+        $userId = $_SESSION['user_id'];
+        
+        if ($userRole === ROLE_SUPER_ADMIN) {
+            // Super admin can view any lifegroup
+        } elseif ($userRole === ROLE_PASTOR) {
+            // Pastors can view lifegroups from their church
+            if ($lifegroup['church_id'] != $_SESSION['church_id']) {
+                setFlash('error', 'You do not have permission to view this lifegroup');
+                $this->redirect('/lifegroup');
+                return;
+            }
+        } elseif ($userRole === ROLE_COACH) {
+            // Coaches can only view lifegroups managed by mentors assigned to them
+            $mentors = $this->userModel->getMentorsByCoach($userId);
+            $mentorIds = array_column($mentors, 'id');
+            if (!in_array($lifegroup['mentor_id'], $mentorIds)) {
+                setFlash('error', 'You do not have permission to view this lifegroup');
+                $this->redirect('/lifegroup');
+                return;
+            }
+        } elseif ($userRole === ROLE_MENTOR) {
+            // Mentors can only view their own lifegroups
+            if ($lifegroup['mentor_id'] != $userId) {
+                setFlash('error', 'You do not have permission to view this lifegroup');
+                $this->redirect('/lifegroup');
+                return;
+            }
+        } else {
+            setFlash('error', 'You do not have permission to view this lifegroup');
             $this->redirect('/lifegroup');
             return;
         }

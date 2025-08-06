@@ -43,6 +43,19 @@ class LifegroupModel extends Model
         return $this->db->fetchAll($sql, [$mentorId]);
     }
     
+    public function getLifegroupsByCoach(int $coachId): array
+    {
+        $sql = "SELECT l.*, c.name as church_name, u.name as mentor_name,
+                       (SELECT COUNT(*) FROM lifegroup_members WHERE lifegroup_id = l.id AND status = 'active') as member_count
+                FROM {$this->table} l 
+                LEFT JOIN churches c ON l.church_id = c.id 
+                LEFT JOIN users u ON l.mentor_id = u.id 
+                LEFT JOIN hierarchy h ON u.id = h.user_id 
+                WHERE h.parent_id = ? AND u.role = 'mentor'
+                ORDER BY l.name ASC";
+        return $this->db->fetchAll($sql, [$coachId]);
+    }
+    
     public function getLifegroupWithDetails(int $id): array|false
     {
         $sql = "SELECT l.*, c.name as church_name, u.name as mentor_name,
