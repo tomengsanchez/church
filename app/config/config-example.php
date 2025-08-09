@@ -1,6 +1,6 @@
 <?php
 // Application Configuration
-define('APP_NAME', 'LIFEGIVER CHURCH');
+define('APP_NAME', 'LIFEGIVER CHURCH v2');
 define('APP_VERSION', '1.0.0');
 define('BASE_URL', 'http://churchapp.local');
 
