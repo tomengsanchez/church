@@ -68,11 +68,27 @@ abstract class Controller
         }
     }
     
-    protected function requireRole(string $role): void
+    protected function requireRole(string|array $role): void
     {
         $this->requireAuth();
-        if (!$this->hasPermission($role)) {
-            $this->redirect('/dashboard');
+        
+        if (is_array($role)) {
+            // Check if user has any of the required roles
+            $hasPermission = false;
+            foreach ($role as $r) {
+                if ($this->hasPermission($r)) {
+                    $hasPermission = true;
+                    break;
+                }
+            }
+            if (!$hasPermission) {
+                $this->redirect('/dashboard');
+            }
+        } else {
+            // Single role check
+            if (!$this->hasPermission($role)) {
+                $this->redirect('/dashboard');
+            }
         }
     }
 } 

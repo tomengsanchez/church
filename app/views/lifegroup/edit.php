@@ -27,15 +27,30 @@
                         
                         <div class="col-md-6 mb-3">
                             <label for="mentor_id" class="form-label">Mentor *</label>
-                            <select class="form-select" id="mentor_id" name="mentor_id" required>
-                                <option value="">Select a mentor</option>
-                                <?php foreach ($mentors as $mentor): ?>
-                                <option value="<?= $mentor['id'] ?>" <?= ($lifegroup['mentor_id'] ?? '') == $mentor['id'] ? 'selected' : '' ?>>
-                                    <?= htmlspecialchars($mentor['name']) ?>
-                                </option>
-                                <?php endforeach; ?>
-                            </select>
-                            <div class="form-text">Select the mentor who will lead this lifegroup.</div>
+                            <?php if (isset($userRole) && $userRole === 'mentor'): ?>
+                                <!-- For mentors, show dropdown with themselves and other mentors under their coach -->
+                                <select class="form-select" id="mentor_id" name="mentor_id" required>
+                                    <option value="">Select a mentor</option>
+                                    <?php if (!empty($mentors)): ?>
+                                        <?php foreach ($mentors as $mentor): ?>
+                                            <option value="<?= $mentor['id'] ?>" <?= ($lifegroup['mentor_id'] ?? '') == $mentor['id'] ? 'selected' : '' ?>>
+                                                <?= htmlspecialchars($mentor['name']) ?>
+                                            </option>
+                                        <?php endforeach; ?>
+                                    <?php endif; ?>
+                                </select>
+                                <div class="form-text">Select a mentor for this lifegroup. You can assign to yourself or other mentors under your coach.</div>
+                            <?php else: ?>
+                                <select class="form-select" id="mentor_id" name="mentor_id" required>
+                                    <option value="">Select a mentor</option>
+                                    <?php foreach ($mentors as $mentor): ?>
+                                    <option value="<?= $mentor['id'] ?>" <?= ($lifegroup['mentor_id'] ?? '') == $mentor['id'] ? 'selected' : '' ?>>
+                                        <?= htmlspecialchars($mentor['name']) ?>
+                                    </option>
+                                    <?php endforeach; ?>
+                                </select>
+                                <div class="form-text">Select the mentor who will lead this lifegroup.</div>
+                            <?php endif; ?>
                         </div>
                     </div>
                     

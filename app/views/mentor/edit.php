@@ -33,24 +33,51 @@
                         
                         <div class="col-md-6 mb-3">
                             <label for="church_id" class="form-label">Church *</label>
-                            <select class="form-select" id="church_id" name="church_id" required>
-                                <option value="">Select Church</option>
-                                <?php foreach ($churches as $church): ?>
-                                <option value="<?= $church['id'] ?>" <?= $mentor['church_id'] == $church['id'] ? 'selected' : '' ?>>
-                                    <?= htmlspecialchars($church['name'] ?? '') ?>
-                                </option>
-                                <?php endforeach; ?>
-                            </select>
+                            <?php if (isset($userRole) && $userRole === 'coach'): ?>
+                                <!-- For coaches, church is pre-selected and non-editable -->
+                                <input type="hidden" name="church_id" value="<?= $currentChurchId ?>">
+                                <input type="text" class="form-control" value="<?= htmlspecialchars($churches[0]['name'] ?? '') ?>" readonly>
+                            <?php else: ?>
+                                <!-- For others, church is selectable -->
+                                <select class="form-select" id="church_id" name="church_id" required>
+                                    <option value="">Select Church</option>
+                                    <?php foreach ($churches as $church): ?>
+                                    <option value="<?= $church['id'] ?>" <?= $mentor['church_id'] == $church['id'] ? 'selected' : '' ?>>
+                                        <?= htmlspecialchars($church['name'] ?? '') ?>
+                                    </option>
+                                    <?php endforeach; ?>
+                                </select>
+                            <?php endif; ?>
                         </div>
                     </div>
                     
                     <div class="row">
                         <div class="col-md-6 mb-3">
                             <label for="coach_id" class="form-label">Coach</label>
-                            <select class="form-select" id="coach_id" name="coach_id">
-                                <option value="">Select Coach</option>
-                            </select>
-                            <div class="form-text">Optional: Assign a coach to mentor this mentor. Select a church first to see available coaches.</div>
+                            <?php if (isset($userRole) && $userRole === 'coach'): ?>
+                                <!-- For coaches, coach is pre-selected and non-editable -->
+                                <input type="hidden" name="coach_id" value="<?= $currentCoachId ?>">
+                                <input type="text" class="form-control" value="<?= htmlspecialchars($coaches[0]['name'] ?? '') ?>" readonly>
+                            <?php else: ?>
+                                <!-- For others, coach is selectable -->
+                                <select class="form-select" id="coach_id" name="coach_id">
+                                    <option value="">Select Coach</option>
+                                    <?php if (isset($coaches) && !empty($coaches)): ?>
+                                        <?php foreach ($coaches as $coach): ?>
+                                        <option value="<?= $coach['id'] ?>" <?= ($currentCoach && $currentCoach['id'] == $coach['id']) ? 'selected' : '' ?>>
+                                            <?= htmlspecialchars($coach['name'] ?? '') ?>
+                                        </option>
+                                        <?php endforeach; ?>
+                                    <?php endif; ?>
+                                </select>
+                            <?php endif; ?>
+                            <div class="form-text">
+                                <?php if (isset($userRole) && $userRole === 'coach'): ?>
+                                    This mentor will remain assigned to you.
+                                <?php else: ?>
+                                    Optional: Assign a coach to mentor this mentor. Select a church first to see available coaches.
+                                <?php endif; ?>
+                            </div>
                         </div>
                         
                         <div class="col-md-6 mb-3">
@@ -98,7 +125,8 @@ document.getElementById('confirm_password').addEventListener('input', function()
     }
 });
 
-// Filter coaches based on selected church
+<?php if (!isset($userRole) || $userRole !== 'coach'): ?>
+// Filter coaches based on selected church (only for non-coaches)
 document.getElementById('church_id').addEventListener('change', function() {
     const churchId = this.value;
     const coachSelect = document.getElementById('coach_id');
@@ -137,4 +165,12 @@ document.addEventListener('DOMContentLoaded', function() {
         churchSelect.dispatchEvent(new Event('change'));
     }
 });
+<?php endif; ?>
+
+<?php if (isset($userRole) && $userRole === 'coach'): ?>
+// For coaches, the church and coach are already pre-selected and non-editable
+document.addEventListener('DOMContentLoaded', function() {
+    console.log('Coach editing mentor - church and coach are pre-selected');
+});
+<?php endif; ?>
 </script> 

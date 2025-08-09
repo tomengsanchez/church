@@ -2,6 +2,8 @@
 
 <div class="row justify-content-center">
     <div class="col-md-8">
+
+        
         <div class="card">
             <div class="card-header">
                 <h4 class="mb-0">
@@ -41,42 +43,98 @@
                         
                         <div class="col-md-6 mb-3">
                             <label for="church_id" class="form-label">Church *</label>
-                            <select class="form-select" id="church_id" name="church_id" required>
-                                <option value="">Select Church</option>
-                                <?php foreach ($churches as $church): ?>
-                                <option value="<?= $church['id'] ?>" <?= $member['church_id'] == $church['id'] ? 'selected' : '' ?>>
-                                    <?= htmlspecialchars($church['name'] ?? '') ?>
-                                </option>
-                                <?php endforeach; ?>
-                            </select>
+                            <?php if (isset($userRole) && in_array($userRole, ['coach', 'mentor'])): ?>
+                                <!-- For coaches and mentors, church is pre-selected and non-editable -->
+                                <input type="hidden" name="church_id" value="<?= $churches[0]['id'] ?? '' ?>">
+                                <input type="text" class="form-control" value="<?= htmlspecialchars($churches[0]['name'] ?? '') ?>" readonly>
+                                <div class="form-text">Church is automatically set to your assigned church.</div>
+                            <?php else: ?>
+                                <select class="form-select" id="church_id" name="church_id" required>
+                                    <option value="">Select Church</option>
+                                    <?php foreach ($churches as $church): ?>
+                                    <option value="<?= $church['id'] ?>" <?= $member['church_id'] == $church['id'] ? 'selected' : '' ?>>
+                                        <?= htmlspecialchars($church['name'] ?? '') ?>
+                                    </option>
+                                    <?php endforeach; ?>
+                                </select>
+                            <?php endif; ?>
                         </div>
                     </div>
                     
                     <div class="row">
                         <div class="col-md-6 mb-3">
                             <label for="coach_id" class="form-label">Coach</label>
-                            <select class="form-select" id="coach_id" name="coach_id">
-                                <option value="">Select Coach</option>
-                            </select>
-                            <div class="form-text">Optional: Assign a coach to this member. Select a church first.</div>
+                            <?php if (isset($userRole) && in_array($userRole, ['coach', 'mentor'])): ?>
+                                <!-- For coaches and mentors, coach is pre-selected and non-editable -->
+                                <input type="hidden" name="coach_id" value="<?= $coaches[0]['id'] ?? '' ?>">
+                                <input type="text" class="form-control" value="<?= htmlspecialchars($coaches[0]['name'] ?? '') ?>" readonly>
+                                <div class="form-text">Coach is automatically set to your assigned coach.</div>
+                            <?php else: ?>
+                                <select class="form-select" id="coach_id" name="coach_id">
+                                    <option value="">Select Coach</option>
+                                    <?php if (isset($coaches) && !empty($coaches)): ?>
+                                        <?php foreach ($coaches as $coach): ?>
+                                        <option value="<?= $coach['id'] ?>" <?= ($currentCoach && $currentCoach['id'] == $member['coach_id']) ? 'selected' : '' ?>>
+                                            <?= htmlspecialchars($coach['name'] ?? '') ?>
+                                        </option>
+                                        <?php endforeach; ?>
+                                    <?php endif; ?>
+                                </select>
+                                <div class="form-text">Optional: Assign a coach to this member. Select a church first.</div>
+                            <?php endif; ?>
                         </div>
                         
                         <div class="col-md-6 mb-3">
                             <label for="mentor_id" class="form-label">Mentor</label>
-                            <select class="form-select" id="mentor_id" name="mentor_id">
-                                <option value="">Select Mentor</option>
-                            </select>
-                            <div class="form-text">Optional: Assign a mentor to this member. Select a coach first.</div>
+                            <?php if (isset($userRole) && $userRole === 'mentor'): ?>
+                                <!-- For mentors, show dropdown with themselves and other mentors under their coach -->
+                                <select class="form-select" id="mentor_id" name="mentor_id">
+                                    <option value="">Select Mentor</option>
+                                    <?php if (!empty($mentors)): ?>
+                                        <?php foreach ($mentors as $mentor): ?>
+                                            <option value="<?= $mentor['id'] ?>" <?= ($member['mentor_id'] ?? $_SESSION['user_id']) == $mentor['id'] ? 'selected' : '' ?>>
+                                                <?= htmlspecialchars($mentor['name']) ?>
+                                            </option>
+                                        <?php endforeach; ?>
+                                    <?php endif; ?>
+                                </select>
+                                <div class="form-text">Select a mentor for this member. You can assign to yourself or other mentors under your coach.</div>
+                            <?php else: ?>
+                                <select class="form-select" id="mentor_id" name="mentor_id">
+                                    <option value="">Select Mentor</option>
+                                </select>
+                                <div class="form-text">Optional: Assign a mentor to this member. Select a coach first.</div>
+                            <?php endif; ?>
                         </div>
                     </div>
                     
                     <div class="row">
                         <div class="col-md-6 mb-3">
                             <label for="lifegroup_id" class="form-label">Lifegroup</label>
-                            <select class="form-select" id="lifegroup_id" name="lifegroup_id">
-                                <option value="">Select Lifegroup</option>
-                            </select>
-                            <div class="form-text">Optional: Assign this member to a lifegroup. Select a mentor first.</div>
+                            <?php if (isset($userRole) && $userRole === 'mentor'): ?>
+                                <!-- For mentors, show dropdown with only their assigned lifegroups -->
+                                <?php if (!empty($lifegroups)): ?>
+                                    <select class="form-select" id="lifegroup_id" name="lifegroup_id">
+                                        <option value="">Select Lifegroup</option>
+                                        <?php foreach ($lifegroups as $lifegroup): ?>
+                                            <option value="<?= $lifegroup['id'] ?>" <?= ($member['lifegroup_id'] ?? '') == $lifegroup['id'] ? 'selected' : '' ?>>
+                                                <?= htmlspecialchars($lifegroup['name']) ?>
+                                            </option>
+                                        <?php endforeach; ?>
+                                    </select>
+                                    <div class="form-text">Select from your assigned lifegroups.</div>
+                                <?php else: ?>
+                                    <input type="text" class="form-control" value="No lifegroup assigned" readonly>
+                                    <div class="form-text">You don't have any assigned lifegroups.</div>
+                                <?php endif; ?>
+                            <?php else: ?>
+                                <select class="form-select" id="lifegroup_id" name="lifegroup_id">
+                                    <option value="">Select Lifegroup</option>
+                                </select>
+                                <div class="form-text">Optional: Assign this member to a lifegroup. Select a mentor first.</div>
+                            <?php endif; ?>
+                            
+
                         </div>
                         
                         <div class="col-md-6 mb-3">
@@ -143,70 +201,95 @@ const previousValues = {
 };
 
 // Filter coaches based on selected church
-document.getElementById('church_id').addEventListener('change', function() {
-    const churchId = this.value;
-    const coachSelect = document.getElementById('coach_id');
-    const mentorSelect = document.getElementById('mentor_id');
-    const lifegroupSelect = document.getElementById('lifegroup_id');
-    
-    // Reset selections
-    coachSelect.innerHTML = '<option value="">Select Coach</option>';
-    mentorSelect.innerHTML = '<option value="">Select Mentor</option>';
-    lifegroupSelect.innerHTML = '<option value="">Select Lifegroup</option>';
-    
-    if (churchId) {
-        // Fetch coaches for the selected church
-        fetch(`/member/coaches/${churchId}`)
-            .then(response => response.json())
-            .then(coaches => {
-                coaches.forEach(coach => {
-                    const option = document.createElement('option');
-                    option.value = coach.id;
-                    option.textContent = coach.name;
-                    // Select if this was the previously selected coach
-                    if (coach.id == previousValues.coach_id) {
-                        option.selected = true;
+const churchSelect = document.getElementById('church_id');
+if (churchSelect) {
+    churchSelect.addEventListener('change', function() {
+        const churchId = this.value;
+        const coachSelect = document.getElementById('coach_id');
+        const mentorSelect = document.getElementById('mentor_id');
+        const lifegroupSelect = document.getElementById('lifegroup_id');
+        
+        // Skip if user is a coach (fields are non-editable)
+        if (document.querySelector('input[name="coach_id"]')) {
+            return;
+        }
+        
+        // Reset selections
+        coachSelect.innerHTML = '<option value="">Select Coach</option>';
+        mentorSelect.innerHTML = '<option value="">Select Mentor</option>';
+        lifegroupSelect.innerHTML = '<option value="">Select Lifegroup</option>';
+        
+        if (churchId) {
+            // Fetch coaches for the selected church
+            fetch(`/member/coaches/${churchId}`)
+                .then(response => response.json())
+                .then(coaches => {
+                    coaches.forEach(coach => {
+                        const option = document.createElement('option');
+                        option.value = coach.id;
+                        option.textContent = coach.name;
+                        // Select if this was the previously selected coach
+                        if (coach.id == previousValues.coach_id) {
+                            option.selected = true;
+                        }
+                        coachSelect.appendChild(option);
+                    });
+                    
+                    // If we had a previous coach selection, load mentors for that coach
+                    if (previousValues.coach_id) {
+                        loadMentorsForCoach(previousValues.coach_id);
                     }
-                    coachSelect.appendChild(option);
+                })
+                .catch(error => {
+                    console.error('Error fetching coaches:', error);
                 });
-                
-                // If we had a previous coach selection, load mentors for that coach
-                if (previousValues.coach_id) {
-                    loadMentorsForCoach(previousValues.coach_id);
-                }
-            })
-            .catch(error => {
-                console.error('Error fetching coaches:', error);
-            });
-    }
-});
+        }
+    });
+}
 
 // Filter mentors based on selected coach
-document.getElementById('coach_id').addEventListener('change', function() {
-    const coachId = this.value;
-    loadMentorsForCoach(coachId);
-});
+const coachSelect = document.getElementById('coach_id');
+if (coachSelect) {
+    coachSelect.addEventListener('change', function() {
+        const coachId = this.value;
+        loadMentorsForCoach(coachId);
+    });
+}
 
 // Filter lifegroups based on selected mentor
-document.getElementById('mentor_id').addEventListener('change', function() {
-    const mentorId = this.value;
-    loadLifegroupsForMentor(mentorId);
-});
+const mentorSelect = document.getElementById('mentor_id');
+if (mentorSelect) {
+    mentorSelect.addEventListener('change', function() {
+        const mentorId = this.value;
+        loadLifegroupsForMentor(mentorId);
+    });
+}
 
 // Helper function to load mentors for a coach
 function loadMentorsForCoach(coachId) {
+
     const mentorSelect = document.getElementById('mentor_id');
     const lifegroupSelect = document.getElementById('lifegroup_id');
     
-    // Reset mentor and lifegroup selections
+    // Only proceed if mentor select element exists
+    if (!mentorSelect) {
+        return;
+    }
+    
+    // Reset lifegroup selection
+    if (lifegroupSelect) {
+        lifegroupSelect.innerHTML = '<option value="">Select Lifegroup</option>';
+    }
+    
+    // Reset mentor selection
     mentorSelect.innerHTML = '<option value="">Select Mentor</option>';
-    lifegroupSelect.innerHTML = '<option value="">Select Lifegroup</option>';
     
     if (coachId) {
         // Fetch mentors for the selected coach
         fetch(`/member/mentors-by-coach/${coachId}`)
             .then(response => response.json())
             .then(mentors => {
+
                 mentors.forEach(mentor => {
                     const option = document.createElement('option');
                     option.value = mentor.id;
@@ -221,6 +304,10 @@ function loadMentorsForCoach(coachId) {
                 // If we had a previous mentor selection, load lifegroups for that mentor
                 if (previousValues.mentor_id) {
                     loadLifegroupsForMentor(previousValues.mentor_id);
+                } else if (mentors.length > 0) {
+                    // If no mentor was pre-selected but we have mentors, load lifegroups for the first one
+                    // This helps coaches see available lifegroups even for new members
+                    loadLifegroupsForMentor(mentors[0].id);
                 }
             })
             .catch(error => {
@@ -231,7 +318,13 @@ function loadMentorsForCoach(coachId) {
 
 // Helper function to load lifegroups for a mentor
 function loadLifegroupsForMentor(mentorId) {
+
     const lifegroupSelect = document.getElementById('lifegroup_id');
+    
+    // Only proceed if lifegroup select element exists
+    if (!lifegroupSelect) {
+        return;
+    }
     
     // Reset lifegroup selection
     lifegroupSelect.innerHTML = '<option value="">Select Lifegroup</option>';
@@ -241,6 +334,7 @@ function loadLifegroupsForMentor(mentorId) {
         fetch(`/member/lifegroups-by-mentor/${mentorId}`)
             .then(response => response.json())
             .then(lifegroups => {
+
                 lifegroups.forEach(lifegroup => {
                     const option = document.createElement('option');
                     option.value = lifegroup.id;
@@ -260,11 +354,24 @@ function loadLifegroupsForMentor(mentorId) {
 
 // Load dropdowns on page load if we have previous values
 document.addEventListener('DOMContentLoaded', function() {
+
+    
     const churchSelect = document.getElementById('church_id');
     
-    // If we have a previous church selection, trigger the change event
-    if (previousValues.church_id && churchSelect.value === previousValues.church_id) {
-        churchSelect.dispatchEvent(new Event('change'));
+    // Check if user is a coach (fields are non-editable)
+    const isCoach = document.querySelector('input[name="coach_id"]');
+    
+    if (isCoach) {
+        // For coaches, load mentors and lifegroups based on their pre-selected coach ID
+        const coachId = isCoach.value;
+        if (coachId) {
+            loadMentorsForCoach(coachId);
+        }
+    } else {
+        // For non-coaches, trigger the normal dropdown loading flow
+        if (previousValues.church_id && churchSelect.value === previousValues.church_id) {
+            churchSelect.dispatchEvent(new Event('change'));
+        }
     }
 });
 </script> 

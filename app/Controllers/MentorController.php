@@ -81,18 +81,39 @@ class MentorController extends Controller
         if ($userRole === ROLE_SUPER_ADMIN) {
             // Super admin can create mentors for any church
             $churches = $churchModel->getAllChurches();
-        } elseif ($userRole === ROLE_PASTOR || $userRole === ROLE_COACH) {
-            // Pastors and coaches can only create mentors for their own church
+            $coaches = $this->userModel->getCoachesForSelection();
+        } elseif ($userRole === ROLE_PASTOR) {
+            // Pastors can only create mentors for their own church
             if ($churchId) {
                 $churches = [$churchModel->findById($churchId)];
+                $coaches = $this->userModel->getCoachesByChurch($churchId);
             } else {
                 $churches = [];
+                $coaches = [];
+            }
+        } elseif ($userRole === ROLE_COACH) {
+            // Coaches can only create mentors for their own church and assign them to themselves
+            if ($churchId) {
+                $churches = [$churchModel->findById($churchId)];
+                // For coaches, they can only assign mentors to themselves
+                
+                $coaches = [$this->userModel->findById($_SESSION['user_id'])];
+            } else {
+                $churches = [];
+                $coaches = [];
             }
         } else {
             $churches = [];
+            $coaches = [];
         }
         
-        $this->view('mentor/create', ['churches' => $churches]);
+        $this->view('mentor/create', [
+            'churches' => $churches,
+            'coaches' => $coaches,
+            'userRole' => $userRole,
+            'currentChurchId' => $churchId,
+            'currentCoachId' => $_SESSION['user_id']
+        ]);
     }
     
     public function store(): void
@@ -130,35 +151,72 @@ class MentorController extends Controller
         // Validate that pastors and coaches can only create mentors for their own church
         if ($userRole !== ROLE_SUPER_ADMIN && $data['church_id'] != $churchId) {
             flash('You can only create mentors for your own church', 'error');
-            $this->redirect('/mentor/create');
+            $this->view('mentor/create', [
+                'data' => $data,
+                'churches' => $this->getChurchesForRole($userRole, $churchId),
+                'coaches' => $this->getCoachesForRole($userRole, $churchId),
+                'userRole' => $userRole,
+                'currentChurchId' => $churchId,
+                'currentCoachId' => $_SESSION['user_id']
+            ]);
             return;
         }
         
         if (empty($data['name']) || empty($data['email']) || empty($data['password'])) {
             flash('Name, email and password are required', 'error');
-            $this->view('mentor/create', ['data' => $data]);
+            $this->view('mentor/create', [
+                'data' => $data,
+                'churches' => $this->getChurchesForRole($userRole, $churchId),
+                'coaches' => $this->getCoachesForRole($userRole, $churchId),
+                'userRole' => $userRole,
+                'currentChurchId' => $churchId,
+                'currentCoachId' => $_SESSION['user_id']
+            ]);
             return;
         }
         
         if ($this->userModel->findByEmail($data['email'])) {
             flash('Email already exists', 'error');
-            $this->view('mentor/create', ['data' => $data]);
+            $this->view('mentor/create', [
+                'data' => $data,
+                'churches' => $this->getChurchesForRole($userRole, $churchId),
+                'coaches' => $this->getCoachesForRole($userRole, $churchId),
+                'userRole' => $userRole,
+                'currentChurchId' => $churchId,
+                'currentCoachId' => $_SESSION['user_id']
+            ]);
             return;
         }
         
         $userId = $this->userModel->create($data);
         
         if ($userId) {
-            // Create hierarchy relationship with coach if selected
-            if (!empty($_POST['coach_id'])) {
-                $this->userModel->createHierarchyRelationship($userId, (int)$_POST['coach_id']);
+            // Create hierarchy relationship with coach
+            $coachId = null;
+            if ($userRole === ROLE_COACH) {
+                // For coaches, automatically assign the mentor to themselves
+                $coachId = $_SESSION['user_id'];
+            } elseif (!empty($_POST['coach_id'])) {
+                // For others, use the selected coach
+                $coachId = (int)$_POST['coach_id'];
+            }
+            
+            if ($coachId) {
+                $this->userModel->createHierarchyRelationship($userId, $coachId);
             }
             
             flash('Mentor created successfully', 'success');
             $this->redirect('/mentor');
         } else {
             flash('Failed to create mentor', 'error');
-            $this->view('mentor/create', ['data' => $data]);
+            $this->view('mentor/create', [
+                'data' => $data,
+                'churches' => $this->getChurchesForRole($userRole, $churchId),
+                'coaches' => $this->getCoachesForRole($userRole, $churchId),
+                'userRole' => $userRole,
+                'currentChurchId' => $churchId,
+                'currentCoachId' => $_SESSION['user_id']
+            ]);
         }
     }
     
@@ -213,15 +271,29 @@ class MentorController extends Controller
         if ($userRole === ROLE_SUPER_ADMIN) {
             // Super admin can edit mentors for any church
             $churches = $churchModel->getAllChurches();
-        } elseif ($userRole === ROLE_PASTOR || $userRole === ROLE_COACH) {
-            // Pastors and coaches can only edit mentors for their own church
+            $coaches = $this->userModel->getCoachesForSelection();
+        } elseif ($userRole === ROLE_PASTOR) {
+            // Pastors can only edit mentors for their own church
             if ($churchId) {
                 $churches = [$churchModel->findById($churchId)];
+                $coaches = $this->userModel->getCoachesByChurch($churchId);
             } else {
                 $churches = [];
+                $coaches = [];
+            }
+        } elseif ($userRole === ROLE_COACH) {
+            // Coaches can only edit mentors assigned to them and only see their own church
+            if ($churchId) {
+                $churches = [$churchModel->findById($churchId)];
+                // For coaches, they can only assign mentors to themselves
+                $coaches = [$this->userModel->findById($_SESSION['user_id'])];
+            } else {
+                $churches = [];
+                $coaches = [];
             }
         } else {
             $churches = [];
+            $coaches = [];
         }
         
         // Get current coach assignment
@@ -230,7 +302,11 @@ class MentorController extends Controller
         $this->view('mentor/edit', [
             'mentor' => $mentor, 
             'churches' => $churches,
-            'currentCoach' => $currentCoach
+            'coaches' => $coaches,
+            'currentCoach' => $currentCoach,
+            'userRole' => $userRole,
+            'currentChurchId' => $churchId,
+            'currentCoachId' => $_SESSION['user_id']
         ]);
     }
     
@@ -309,14 +385,30 @@ class MentorController extends Controller
         
         if ($this->userModel->update($mentorId, $data)) {
             // Update hierarchy relationship with coach
-            $coachId = !empty($_POST['coach_id']) ? (int)$_POST['coach_id'] : null;
+            $coachId = null;
+            if ($userRole === ROLE_COACH) {
+                // For coaches, automatically assign the mentor to themselves
+                $coachId = $_SESSION['user_id'];
+            } elseif (!empty($_POST['coach_id'])) {
+                // For others, use the selected coach
+                $coachId = (int)$_POST['coach_id'];
+            }
+            
             $this->userModel->updateHierarchyRelationship($mentorId, $coachId);
             
             flash('Mentor updated successfully', 'success');
             $this->redirect('/mentor');
         } else {
             flash('Failed to update mentor', 'error');
-            $this->view('mentor/edit', ['mentor' => $mentor]);
+            $this->view('mentor/edit', [
+                'mentor' => $mentor,
+                'churches' => $this->getChurchesForRole($userRole, $churchId),
+                'coaches' => $this->getCoachesForRole($userRole, $churchId),
+                'currentCoach' => $currentCoach,
+                'userRole' => $userRole,
+                'currentChurchId' => $churchId,
+                'currentCoachId' => $_SESSION['user_id']
+            ]);
         }
     }
     
@@ -395,5 +487,43 @@ class MentorController extends Controller
         header('Content-Type: application/json');
         echo json_encode($coaches);
         exit;
+    }
+    
+    /**
+     * Helper method to get churches based on user role
+     */
+    private function getChurchesForRole(string $userRole, ?int $churchId): array
+    {
+        $churchModel = new \App\Models\ChurchModel();
+        
+        if ($userRole === ROLE_SUPER_ADMIN) {
+            return $churchModel->getAllChurches();
+        } elseif ($userRole === ROLE_PASTOR || $userRole === ROLE_COACH) {
+            if ($churchId) {
+                return [$churchModel->findById($churchId)];
+            }
+        }
+        
+        return [];
+    }
+    
+    /**
+     * Helper method to get coaches based on user role
+     */
+    private function getCoachesForRole(string $userRole, ?int $churchId): array
+    {
+        if ($userRole === ROLE_SUPER_ADMIN) {
+            return $this->userModel->getCoachesForSelection();
+        } elseif ($userRole === ROLE_PASTOR) {
+            if ($churchId) {
+                return $this->userModel->getCoachesByChurch($churchId);
+            }
+        } elseif ($userRole === ROLE_COACH) {
+            if ($churchId) {
+                return [$this->userModel->findById($_SESSION['user_id'])];
+            }
+        }
+        
+        return [];
     }
 } 

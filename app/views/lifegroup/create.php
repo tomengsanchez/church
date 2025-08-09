@@ -44,17 +44,32 @@
                     <div class="row">
                         <div class="col-md-6 mb-3">
                             <label for="mentor_id" class="form-label">Mentor *</label>
-                            <select class="form-select" id="mentor_id" name="mentor_id" required>
-                                <option value="">Select a mentor</option>
-                                <?php if (!isset($isSuperAdmin) || !$isSuperAdmin): ?>
-                                <?php foreach ($mentors as $mentor): ?>
-                                <option value="<?= $mentor['id'] ?>" <?= ($data['mentor_id'] ?? '') == $mentor['id'] ? 'selected' : '' ?>>
-                                    <?= htmlspecialchars($mentor['name']) ?>
-                                </option>
-                                <?php endforeach; ?>
-                                <?php endif; ?>
-                            </select>
-                            <div class="form-text">Select the mentor who will lead this lifegroup.</div>
+                            <?php if (isset($userRole) && $userRole === 'mentor'): ?>
+                                <!-- For mentors, show dropdown with themselves and other mentors under their coach -->
+                                <select class="form-select" id="mentor_id" name="mentor_id" required>
+                                    <option value="">Select a mentor</option>
+                                    <?php if (!empty($mentors)): ?>
+                                        <?php foreach ($mentors as $mentor): ?>
+                                            <option value="<?= $mentor['id'] ?>" <?= ($data['mentor_id'] ?? $_SESSION['user_id']) == $mentor['id'] ? 'selected' : '' ?>>
+                                                <?= htmlspecialchars($mentor['name']) ?>
+                                            </option>
+                                        <?php endforeach; ?>
+                                    <?php endif; ?>
+                                </select>
+                                <div class="form-text">Select a mentor for this lifegroup. You can assign to yourself or other mentors under your coach.</div>
+                            <?php else: ?>
+                                <select class="form-select" id="mentor_id" name="mentor_id" required>
+                                    <option value="">Select a mentor</option>
+                                    <?php if (!isset($isSuperAdmin) || !$isSuperAdmin): ?>
+                                    <?php foreach ($mentors as $mentor): ?>
+                                    <option value="<?= $mentor['id'] ?>" <?= ($data['mentor_id'] ?? '') == $mentor['id'] ? 'selected' : '' ?>>
+                                        <?= htmlspecialchars($mentor['name']) ?>
+                                    </option>
+                                    <?php endforeach; ?>
+                                    <?php endif; ?>
+                                </select>
+                                <div class="form-text">Select the mentor who will lead this lifegroup.</div>
+                            <?php endif; ?>
                         </div>
                     </div>
                     
@@ -81,7 +96,33 @@
                         
                         <div class="col-md-4 mb-3">
                             <label for="meeting_time" class="form-label">Meeting Time</label>
-                            <input type="time" class="form-control" id="meeting_time" name="meeting_time" value="<?= htmlspecialchars($data['meeting_time'] ?? '') ?>">
+                            <select class="form-select" id="meeting_time" name="meeting_time">
+                                <option value="">Select time</option>
+                                <option value="00:00" <?= ($data['meeting_time'] ?? '') === '00:00' ? 'selected' : '' ?>>12:00 AM</option>
+                                <option value="01:00" <?= ($data['meeting_time'] ?? '') === '01:00' ? 'selected' : '' ?>>1:00 AM</option>
+                                <option value="02:00" <?= ($data['meeting_time'] ?? '') === '02:00' ? 'selected' : '' ?>>2:00 AM</option>
+                                <option value="03:00" <?= ($data['meeting_time'] ?? '') === '03:00' ? 'selected' : '' ?>>3:00 AM</option>
+                                <option value="04:00" <?= ($data['meeting_time'] ?? '') === '04:00' ? 'selected' : '' ?>>4:00 AM</option>
+                                <option value="05:00" <?= ($data['meeting_time'] ?? '') === '05:00' ? 'selected' : '' ?>>5:00 AM</option>
+                                <option value="06:00" <?= ($data['meeting_time'] ?? '') === '06:00' ? 'selected' : '' ?>>6:00 AM</option>
+                                <option value="07:00" <?= ($data['meeting_time'] ?? '') === '07:00' ? 'selected' : '' ?>>7:00 AM</option>
+                                <option value="08:00" <?= ($data['meeting_time'] ?? '') === '08:00' ? 'selected' : '' ?>>8:00 AM</option>
+                                <option value="09:00" <?= ($data['meeting_time'] ?? '') === '09:00' ? 'selected' : '' ?>>9:00 AM</option>
+                                <option value="10:00" <?= ($data['meeting_time'] ?? '') === '10:00' ? 'selected' : '' ?>>10:00 AM</option>
+                                <option value="11:00" <?= ($data['meeting_time'] ?? '') === '11:00' ? 'selected' : '' ?>>11:00 AM</option>
+                                <option value="12:00" <?= ($data['meeting_time'] ?? '') === '12:00' ? 'selected' : '' ?>>12:00 PM</option>
+                                <option value="13:00" <?= ($data['meeting_time'] ?? '') === '13:00' ? 'selected' : '' ?>>1:00 PM</option>
+                                <option value="14:00" <?= ($data['meeting_time'] ?? '') === '14:00' ? 'selected' : '' ?>>2:00 PM</option>
+                                <option value="15:00" <?= ($data['meeting_time'] ?? '') === '15:00' ? 'selected' : '' ?>>3:00 PM</option>
+                                <option value="16:00" <?= ($data['meeting_time'] ?? '') === '16:00' ? 'selected' : '' ?>>4:00 PM</option>
+                                <option value="17:00" <?= ($data['meeting_time'] ?? '') === '17:00' ? 'selected' : '' ?>>5:00 PM</option>
+                                <option value="18:00" <?= ($data['meeting_time'] ?? '') === '18:00' ? 'selected' : '' ?>>6:00 PM</option>
+                                <option value="19:00" <?= ($data['meeting_time'] ?? '') === '19:00' ? 'selected' : '' ?>>7:00 PM</option>
+                                <option value="20:00" <?= ($data['meeting_time'] ?? '') === '20:00' ? 'selected' : '' ?>>8:00 PM</option>
+                                <option value="21:00" <?= ($data['meeting_time'] ?? '') === '21:00' ? 'selected' : '' ?>>9:00 PM</option>
+                                <option value="22:00" <?= ($data['meeting_time'] ?? '') === '22:00' ? 'selected' : '' ?>>10:00 PM</option>
+                                <option value="23:00" <?= ($data['meeting_time'] ?? '') === '23:00' ? 'selected' : '' ?>>11:00 PM</option>
+                            </select>
                         </div>
                         
                         <div class="col-md-4 mb-3">

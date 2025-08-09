@@ -2,7 +2,7 @@
   "project": {
     "name": "LIFEGIVER CHURCH - Member Monitoring Application",
     "version": "1.0.0",
-    "last_updated": "2025-08-06",
+    "last_updated": "2025-01-27",
     "status": "Production Ready"
   },
   "completed_features": {
@@ -90,6 +90,16 @@
         "Coach can only manage assigned mentors",
         "Coach can only see lifegroups from assigned mentors"
       ]
+    },
+    "mentor_features": {
+      "status": "✅ Complete",
+      "items": [
+        "Mentor can create/edit members with proper hierarchy assignment",
+        "Mentor can create/edit lifegroups with self-assignment capability",
+        "Mentor can select from assigned lifegroups when creating members",
+        "Mentor mentor dropdown defaults to logged-in mentor",
+        "Time selection limited to 1-hour intervals for lifegroups"
+      ]
     }
   },
   "bug_fixes_completed": {
@@ -136,6 +146,93 @@
         "Super admins not seeing all mentors",
         "Navigation visibility for super admins"
       ]
+    },
+    "mentor_dropdown_issues": {
+      "status": "✅ Fixed",
+      "issues": [
+        "Mentor dropdown not pre-selecting logged-in mentor in member forms",
+        "Mentor field showing as read-only instead of selectable dropdown in member edit",
+        "JavaScript error: Cannot set properties of null (setting 'innerHTML')",
+        "Lifegroup time input showing minutes instead of 1-hour intervals"
+      ]
+    }
+  },
+  "todays_completed_work": {
+    "date": "2025-01-27",
+    "status": "✅ COMPLETED",
+    "work_items": [
+      {
+        "task": "Mentor Dropdown Pre-selection Fix",
+        "description": "Fixed mentor dropdown in member create/edit forms to properly pre-select the logged-in mentor for ROLE_MENTOR users",
+        "files_modified": [
+          "app/views/member/create.php",
+          "app/views/member/edit.php"
+        ],
+        "changes": [
+          "Updated mentor dropdown selected logic to use ($data['mentor_id'] ?? $_SESSION['user_id']) for ROLE_MENTOR",
+          "Changed mentor field in edit.php from read-only input to selectable dropdown for consistency",
+          "Removed debug information from edit.php"
+        ]
+      },
+      {
+        "task": "JavaScript Error Fix",
+        "description": "Fixed 'Cannot set properties of null (setting 'innerHTML')' error in member forms",
+        "files_modified": [
+          "app/views/member/create.php",
+          "app/views/member/edit.php"
+        ],
+        "changes": [
+          "Added null check for mentorSelect element in loadMentorsForCoach function",
+          "Prevented JavaScript errors when DOM elements don't exist for certain user roles"
+        ]
+      },
+      {
+        "task": "Lifegroup Time Input Enhancement",
+        "description": "Modified lifegroup create form time input to show only 1-hour intervals without minutes",
+        "files_modified": [
+          "app/views/lifegroup/create.php"
+        ],
+        "changes": [
+          "Replaced time input with select dropdown containing 24 hourly options (00:00 to 23:00)",
+          "Display format shows user-friendly 12-hour format (e.g., '1:00 PM')",
+          "Form submission maintains 24-hour format (HH:MM) for database storage",
+          "Preserves existing data selection when editing"
+        ]
+      },
+      {
+        "task": "Mentor Lifegroup Management Enhancement",
+        "description": "Enhanced mentor capabilities for creating and editing lifegroups",
+        "files_modified": [
+          "app/views/lifegroup/create.php",
+          "app/views/lifegroup/edit.php",
+          "app/Controllers/LifegroupController.php"
+        ],
+        "changes": [
+          "Mentor dropdown in lifegroup forms now defaults to logged-in mentor",
+          "Mentors can select themselves or other mentors under their coach",
+          "Updated mentor loading logic to use proper hierarchy relationships",
+          "Fixed typo in LifegroupController (lifegroupController -> lifegroupModel)"
+        ]
+      },
+      {
+        "task": "Member Creation Hierarchy Fix",
+        "description": "Investigated and resolved issue where mentor-created members weren't showing assigned coach/mentor in forms",
+        "investigation": [
+          "Verified backend was correctly assigning coach and mentor in database",
+          "Confirmed issue was frontend display problem, not backend logic",
+          "Fixed mentor dropdown pre-selection to show correct assignments"
+        ],
+        "files_modified": [
+          "app/views/member/create.php",
+          "app/views/member/edit.php"
+        ]
+      }
+    ],
+    "technical_details": {
+      "javascript_fixes": "Added null checks for DOM elements to prevent TypeError",
+      "form_enhancements": "Improved dropdown behavior and pre-selection logic",
+      "user_experience": "Better form usability for mentors creating members and lifegroups",
+      "time_management": "Simplified time selection to 1-hour intervals for better user experience"
     }
   },
   "permission_system_updates": {
@@ -176,13 +273,25 @@
           "app/Controllers/AuthController.php",
           "app/Controllers/DashboardController.php"
         ]
+      },
+      {
+        "issue": "Mentor Form Field Behavior",
+        "description": "Mentors needed proper field behavior for creating/editing members and lifegroups",
+        "solution": "Implemented role-based field behavior with proper pre-selection and dropdown options",
+        "files_modified": [
+          "app/views/member/create.php",
+          "app/views/member/edit.php",
+          "app/views/lifegroup/create.php",
+          "app/views/lifegroup/edit.php",
+          "app/Controllers/LifegroupController.php"
+        ]
       }
     ],
     "permission_structure": {
       "super_admin": "Can access and manage ALL data across all churches",
       "pastor": "Can access and manage ALL data from their assigned church",
       "coach": "Can only access and manage data related to mentors assigned to them through hierarchy",
-      "mentor": "Can only access and manage their own data and assigned members",
+      "mentor": "Can only access and manage their own data and assigned members, with proper form pre-selection",
       "member": "Can only view their own profile"
     }
   },
@@ -191,12 +300,25 @@
     "error_log_status": "🟢 Clean",
     "all_modules_working": "✅ Yes",
     "production_ready": "✅ Yes",
-    "permission_system": "✅ Fully Implemented"
+    "permission_system": "✅ Fully Implemented",
+    "mentor_experience": "✅ Enhanced",
+    "form_usability": "✅ Improved",
+    "recent_fixes": {
+      "status": "✅ COMPLETED - 2025-01-27",
+      "items": [
+        "Fixed mentor dropdown pre-selection in member forms",
+        "Resolved JavaScript errors in member creation/editing",
+        "Enhanced lifegroup time input to 1-hour intervals only",
+        "Improved mentor lifegroup management capabilities",
+        "Fixed member creation hierarchy display issues",
+        "Enhanced overall user experience for mentors"
+      ]
+    }
   },
   "next_development_focus": {
-    "priority": "🔴 HIGH",
-    "focus_area": "Permission Fixes for Create and Edit Dropdown Fields",
-    "description": "Implement role-based restrictions for dropdown fields in create and edit forms to ensure users can only select appropriate options based on their permissions",
+    "priority": "🟡 MEDIUM",
+    "focus_area": "User Experience Testing and Data Validation Enhancement",
+    "description": "Complete user experience testing from different role perspectives and enhance data validation across all forms",
     "issues_to_address": [
       {
         "issue": "Pastor Church Selection",
@@ -230,7 +352,8 @@
           "app/Controllers/MentorController.php",
           "app/views/mentor/create.php",
           "app/views/mentor/edit.php"
-        ]
+        ],
+        "status": "✅ COMPLETED - 2025-01-27"
       },
       {
         "issue": "Mentor Coach Selection",

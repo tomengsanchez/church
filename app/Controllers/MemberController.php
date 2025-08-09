@@ -93,16 +93,101 @@ class MemberController extends Controller
     
     public function create(): void
     {
-        $this->requireRole(ROLE_MENTOR);
+        $this->requireRole([ROLE_MENTOR, ROLE_COACH]);
         
-        $churches = $this->churchModel->getAllChurches();
+        $userRole = $this->getUserRole();
+        $churchId = $_SESSION['church_id'] ?? null;
         
-        $this->view('member/create', ['churches' => $churches]);
+        // If church_id is not in session, get it from the database
+        if ($churchId === null) {
+            $user = $this->userModel->findById($_SESSION['user_id']);
+            if ($user && isset($user['church_id'])) {
+                $churchId = $user['church_id'];
+            }
+        }
+        
+        // Get churches based on user role
+        if ($userRole === ROLE_SUPER_ADMIN) {
+            // Super admin can create members for any church
+            $churches = $this->churchModel->getAllChurches();
+        } else {
+            // Pastors, coaches, and mentors can only create members for their own church
+            if ($churchId) {
+                $churches = [$this->churchModel->findById($churchId)];
+            } else {
+                $churches = [];
+            }
+        }
+        
+        // Get coaches based on user role and church
+        $coaches = [];
+        if ($userRole === ROLE_SUPER_ADMIN) {
+            $coaches = $this->userModel->getCoachesForSelection();
+        } elseif ($userRole === ROLE_COACH) {
+            // Coaches can only assign members to themselves
+            $currentCoach = $this->userModel->findById($_SESSION['user_id']);
+            $coaches = [$currentCoach];
+        } elseif ($userRole === ROLE_MENTOR) {
+            // Mentors can only assign members to their coach
+            $currentMentor = $this->userModel->findById($_SESSION['user_id']);
+            $currentCoach = $this->userModel->getHierarchyParent($_SESSION['user_id']);
+            if ($currentCoach && $currentCoach['role'] === 'coach') {
+                $coaches = [$currentCoach];
+            } else {
+                $coaches = [];
+            }
+        } elseif ($churchId) {
+            $coaches = $this->userModel->getCoachesByChurch($churchId);
+        }
+        
+        // Get mentors based on user role
+        $mentors = [];
+        if ($userRole === ROLE_SUPER_ADMIN) {
+            $mentors = $this->userModel->getMentorsForSelection();
+        } elseif ($userRole === ROLE_COACH) {
+            // Coaches can see mentors under them
+            $mentors = $this->userModel->getMentorsByCoach($_SESSION['user_id']);
+        } elseif ($userRole === ROLE_MENTOR) {
+            // Mentors can only assign members to themselves
+            $currentMentor = $this->userModel->findById($_SESSION['user_id']);
+            $mentors = [$currentMentor];
+        } elseif ($churchId) {
+            $mentors = $this->userModel->getMentorsByChurch($churchId);
+        }
+
+        // Get lifegroups based on user role
+        $lifegroups = [];
+        if ($userRole === ROLE_SUPER_ADMIN) {
+            $lifegroups = $this->lifegroupModel->getAllLifegroups();
+        } elseif ($userRole === ROLE_COACH) {
+            // Coaches can see lifegroups under their mentors
+            $lifegroups = $this->lifegroupModel->getLifegroupsByCoach($_SESSION['user_id']);
+        } elseif ($userRole === ROLE_MENTOR) {
+            // Mentors can only assign members to their own lifegroups
+            $lifegroups = $this->lifegroupModel->getLifegroupsByMentor($_SESSION['user_id']);
+        } elseif ($churchId) {
+            $lifegroups = $this->lifegroupModel->getLifegroupsByChurch($churchId);
+        }
+
+        $this->view('member/create', [
+            'churches' => $churches,
+            'coaches' => $coaches,
+            'mentors' => $mentors,
+            'lifegroups' => $lifegroups,
+            'userRole' => $userRole,
+            'currentUserId' => $_SESSION['user_id'],
+            'data' => [
+                'church_id' => in_array($userRole, [ROLE_COACH, ROLE_MENTOR]) ? $churchId : null,
+                'coach_id' => $userRole === ROLE_COACH ? $_SESSION['user_id'] : ($userRole === ROLE_MENTOR ? ($coaches[0]['id'] ?? null) : null),
+                'mentor_id' => $userRole === ROLE_MENTOR ? $_SESSION['user_id'] : null,
+                'lifegroup_id' => null
+            ]
+        ]);
     }
     
     public function store(): void
     {
-        $this->requireRole(ROLE_MENTOR);
+        $this->requireRole([ROLE_MENTOR, ROLE_COACH]);
         
         $data = [
             'name' => $_POST['name'] ?? '',
@@ -118,13 +203,54 @@ class MemberController extends Controller
         // Validate required fields
         if (empty($data['name'])) {
             flash('Name is required', 'error');
+            
+            // Get restricted data for error view
+            $userRole = $this->getUserRole();
+            $churchId = $_SESSION['church_id'] ?? null;
+            
+            if ($churchId === null) {
+                $user = $this->userModel->findById($_SESSION['user_id']);
+                if ($user && isset($user['church_id'])) {
+                    $churchId = $user['church_id'];
+                }
+            }
+            
+            $churches = [];
+            $coaches = [];
+            
+            if ($userRole === ROLE_SUPER_ADMIN) {
+                $churches = $this->churchModel->getAllChurches();
+                $coaches = $this->userModel->getCoachesForSelection();
+            } elseif ($churchId) {
+                $churches = [$this->churchModel->findById($churchId)];
+                $coaches = $this->userModel->getCoachesByChurch($churchId);
+            }
+            
+            // Get mentors for error view
+            $mentors = [];
+            if ($userRole === ROLE_SUPER_ADMIN) {
+                $mentors = $this->userModel->getMentorsForSelection();
+            } elseif ($userRole === ROLE_COACH) {
+                $mentors = $this->userModel->getMentorsByCoach($_SESSION['user_id']);
+            } elseif ($userRole === ROLE_MENTOR) {
+                $currentMentor = $this->userModel->findById($_SESSION['user_id']);
+                $mentors = [$currentMentor];
+            } elseif ($churchId) {
+                $mentors = $this->userModel->getMentorsByChurch($churchId);
+            }
+
             $this->view('member/create', [
                 'data' => array_merge($data, [
                     'coach_id' => $_POST['coach_id'] ?? null,
                     'mentor_id' => $_POST['mentor_id'] ?? null,
                     'lifegroup_id' => $_POST['lifegroup_id'] ?? null
                 ]),
-                'churches' => $this->churchModel->getAllChurches()
+                'churches' => $churches,
+                'coaches' => $coaches,
+                'mentors' => $mentors,
+                'lifegroups' => $userRole === ROLE_MENTOR ? $this->lifegroupModel->getLifegroupsByMentor($_SESSION['user_id']) : [],
+                'userRole' => $userRole,
+                'currentUserId' => $_SESSION['user_id']
             ]);
             return;
         }
@@ -134,13 +260,67 @@ class MemberController extends Controller
             // Check if email already exists
             if ($this->userModel->findByEmail($data['email'])) {
                 flash('Email address already exists', 'error');
+                
+                // Get restricted data for error view
+                $userRole = $this->getUserRole();
+                $churchId = $_SESSION['church_id'] ?? null;
+                
+                if ($churchId === null) {
+                    $user = $this->userModel->findById($_SESSION['user_id']);
+                    if ($user && isset($user['church_id'])) {
+                        $churchId = $user['church_id'];
+                    }
+                }
+                
+                $churches = [];
+                $coaches = [];
+                
+                if ($userRole === ROLE_SUPER_ADMIN) {
+                    $churches = $this->churchModel->getAllChurches();
+                    $coaches = $this->userModel->getCoachesForSelection();
+                } elseif ($userRole === ROLE_COACH) {
+                    // Coaches can only assign members to themselves
+                    $churches = [$this->churchModel->findById($churchId)];
+                    $coaches = [$this->userModel->findById($_SESSION['user_id'])];
+                } elseif ($userRole === ROLE_MENTOR) {
+                    // Mentors can only assign members to their church and coach
+                    $churches = [$this->churchModel->findById($churchId)];
+                    $currentCoach = $this->userModel->getHierarchyParent($_SESSION['user_id']);
+                    if ($currentCoach && $currentCoach['role'] === 'coach') {
+                        $coaches = [$currentCoach];
+                    } else {
+                        $coaches = [];
+                    }
+                } elseif ($churchId) {
+                    $churches = [$this->churchModel->findById($churchId)];
+                    $coaches = $this->userModel->getCoachesByChurch($churchId);
+                }
+                
+                // Get mentors for error view
+                $mentors = [];
+                if ($userRole === ROLE_SUPER_ADMIN) {
+                    $mentors = $this->userModel->getMentorsForSelection();
+                } elseif ($userRole === ROLE_COACH) {
+                    $mentors = $this->userModel->getMentorsByCoach($_SESSION['user_id']);
+                } elseif ($userRole === ROLE_MENTOR) {
+                    $currentMentor = $this->userModel->findById($_SESSION['user_id']);
+                    $mentors = [$currentMentor];
+                } elseif ($churchId) {
+                    $mentors = $this->userModel->getMentorsByChurch($churchId);
+                }
+                
                 $this->view('member/create', [
                     'data' => array_merge($data, [
                         'coach_id' => $_POST['coach_id'] ?? null,
                         'mentor_id' => $_POST['mentor_id'] ?? null,
                         'lifegroup_id' => $_POST['lifegroup_id'] ?? null
                     ]),
-                    'churches' => $this->churchModel->getAllChurches()
+                    'churches' => $churches,
+                    'coaches' => $coaches,
+                    'mentors' => $mentors,
+                    'lifegroups' => $userRole === ROLE_MENTOR ? $this->lifegroupModel->getLifegroupsByMentor($_SESSION['user_id']) : [],
+                    'userRole' => $userRole,
+                    'currentUserId' => $_SESSION['user_id']
                 ]);
                 return;
             }
@@ -150,13 +330,67 @@ class MemberController extends Controller
         if (!empty($data['password'])) {
             if (strlen($data['password']) < 6) {
                 flash('Password must be at least 6 characters long', 'error');
+                
+                // Get restricted data for error view
+                $userRole = $this->getUserRole();
+                $churchId = $_SESSION['church_id'] ?? null;
+                
+                if ($churchId === null) {
+                    $user = $this->userModel->findById($_SESSION['user_id']);
+                    if ($user && isset($user['church_id'])) {
+                        $churchId = $user['church_id'];
+                    }
+                }
+                
+                $churches = [];
+                $coaches = [];
+                
+                if ($userRole === ROLE_SUPER_ADMIN) {
+                    $churches = $this->churchModel->getAllChurches();
+                    $coaches = $this->userModel->getCoachesForSelection();
+                } elseif ($userRole === ROLE_COACH) {
+                    // Coaches can only assign members to themselves
+                    $churches = [$this->churchModel->findById($churchId)];
+                    $coaches = [$this->userModel->findById($_SESSION['user_id'])];
+                } elseif ($userRole === ROLE_MENTOR) {
+                    // Mentors can only assign members to their church and coach
+                    $churches = [$this->churchModel->findById($churchId)];
+                    $currentCoach = $this->userModel->getHierarchyParent($_SESSION['user_id']);
+                    if ($currentCoach && $currentCoach['role'] === 'coach') {
+                        $coaches = [$currentCoach];
+                    } else {
+                        $coaches = [];
+                    }
+                } elseif ($churchId) {
+                    $churches = [$this->churchModel->findById($churchId)];
+                    $coaches = $this->userModel->getCoachesByChurch($churchId);
+                }
+                
+                // Get mentors for error view
+                $mentors = [];
+                if ($userRole === ROLE_SUPER_ADMIN) {
+                    $mentors = $this->userModel->getMentorsForSelection();
+                } elseif ($userRole === ROLE_COACH) {
+                    $mentors = $this->userModel->getMentorsByCoach($_SESSION['user_id']);
+                } elseif ($userRole === ROLE_MENTOR) {
+                    $currentMentor = $this->userModel->findById($_SESSION['user_id']);
+                    $mentors = [$currentMentor];
+                } elseif ($churchId) {
+                    $mentors = $this->userModel->getMentorsByChurch($churchId);
+                }
+                
                 $this->view('member/create', [
                     'data' => array_merge($data, [
                         'coach_id' => $_POST['coach_id'] ?? null,
                         'mentor_id' => $_POST['mentor_id'] ?? null,
                         'lifegroup_id' => $_POST['lifegroup_id'] ?? null
                     ]),
-                    'churches' => $this->churchModel->getAllChurches()
+                    'churches' => $churches,
+                    'coaches' => $coaches,
+                    'mentors' => $mentors,
+                    'lifegroups' => $userRole === ROLE_MENTOR ? $this->lifegroupModel->getLifegroupsByMentor($_SESSION['user_id']) : [],
+                    'userRole' => $userRole,
+                    'currentUserId' => $_SESSION['user_id']
                 ]);
                 return;
             }
@@ -165,6 +399,26 @@ class MemberController extends Controller
         $userId = $this->userModel->create($data);
         
         if ($userId) {
+            $userRole = $this->getUserRole();
+            
+            // Handle coach assignment for coaches and mentors
+            if ($userRole === ROLE_COACH && !empty($_POST['coach_id'])) {
+                $coachId = (int)$_POST['coach_id'];
+                // Ensure the coach is the current user
+                if ($coachId === (int)$_SESSION['user_id']) {
+                    // Create hierarchy relationship for the member to the coach
+                    $this->userModel->createHierarchyRelationship($userId, $coachId);
+                }
+            } elseif ($userRole === ROLE_MENTOR && !empty($_POST['coach_id'])) {
+                $coachId = (int)$_POST['coach_id'];
+                // Ensure the coach is the mentor's parent
+                $currentCoach = $this->userModel->getHierarchyParent($_SESSION['user_id']);
+                if ($currentCoach && $currentCoach['role'] === 'coach' && $coachId === $currentCoach['id']) {
+                    // Create hierarchy relationship for the member to the coach
+                    $this->userModel->createHierarchyRelationship($userId, $coachId);
+                }
+            }
+            
             // Handle mentor assignment (members are assigned to mentors)
             if (!empty($_POST['mentor_id'])) {
                 $mentorId = (int)$_POST['mentor_id'];
@@ -190,20 +444,74 @@ class MemberController extends Controller
             $this->redirect('/member');
         } else {
             flash('Failed to create member', 'error');
+            
+            // Get restricted data for error view
+            $userRole = $this->getUserRole();
+            $churchId = $_SESSION['church_id'] ?? null;
+            
+            if ($churchId === null) {
+                $user = $this->userModel->findById($_SESSION['user_id']);
+                if ($user && isset($user['church_id'])) {
+                    $churchId = $user['church_id'];
+                }
+            }
+            
+            $churches = [];
+            $coaches = [];
+            
+            if ($userRole === ROLE_SUPER_ADMIN) {
+                $churches = $this->churchModel->getAllChurches();
+                $coaches = $this->userModel->getCoachesForSelection();
+            } elseif ($userRole === ROLE_COACH) {
+                // Coaches can only assign members to themselves
+                $churches = [$this->churchModel->findById($churchId)];
+                $coaches = [$this->userModel->findById($_SESSION['user_id'])];
+            } elseif ($userRole === ROLE_MENTOR) {
+                // Mentors can only assign members to their church and coach
+                $churches = [$this->churchModel->findById($churchId)];
+                $currentCoach = $this->userModel->getHierarchyParent($_SESSION['user_id']);
+                if ($currentCoach && $currentCoach['role'] === 'coach') {
+                    $coaches = [$currentCoach];
+                } else {
+                    $coaches = [];
+                }
+            } elseif ($churchId) {
+                $churches = [$this->churchModel->findById($churchId)];
+                $coaches = $this->userModel->getCoachesByChurch($churchId);
+            }
+            
+            // Get mentors for error view
+            $mentors = [];
+            if ($userRole === ROLE_SUPER_ADMIN) {
+                $mentors = $this->userModel->getMentorsForSelection();
+            } elseif ($userRole === ROLE_COACH) {
+                $mentors = $this->userModel->getMentorsByCoach($_SESSION['user_id']);
+            } elseif ($userRole === ROLE_MENTOR) {
+                $currentMentor = $this->userModel->findById($_SESSION['user_id']);
+                $mentors = [$currentMentor];
+            } elseif ($churchId) {
+                $mentors = $this->userModel->getMentorsByChurch($churchId);
+            }
+
             $this->view('member/create', [
                 'data' => array_merge($data, [
                     'coach_id' => $_POST['coach_id'] ?? null,
                     'mentor_id' => $_POST['mentor_id'] ?? null,
                     'lifegroup_id' => $_POST['lifegroup_id'] ?? null
                 ]),
-                'churches' => $this->churchModel->getAllChurches()
+                'churches' => $churches,
+                'coaches' => $coaches,
+                'mentors' => $mentors,
+                'lifegroups' => $userRole === ROLE_MENTOR ? $this->lifegroupModel->getLifegroupsByMentor($_SESSION['user_id']) : [],
+                'userRole' => $userRole,
+                'currentUserId' => $_SESSION['user_id']
             ]);
         }
     }
     
     public function edit(string $id): void
     {
-        $this->requireRole(ROLE_MENTOR);
+        $this->requireRole([ROLE_MENTOR, ROLE_COACH]);
         
         $member = $this->userModel->findById((int) $id);
         
@@ -212,7 +520,48 @@ class MemberController extends Controller
             $this->redirect('/member');
         }
         
-        $churches = $this->churchModel->getAllChurches();
+        $userRole = $this->getUserRole();
+        $churchId = $_SESSION['church_id'] ?? null;
+        
+        // If church_id is not in session, get it from the database
+        if ($churchId === null) {
+            $user = $this->userModel->findById($_SESSION['user_id']);
+            if ($user && isset($user['church_id'])) {
+                $churchId = $user['church_id'];
+            }
+        }
+        
+        // Get churches based on user role
+        if ($userRole === ROLE_SUPER_ADMIN) {
+            // Super admin can edit members from any church
+            $churches = $this->churchModel->getAllChurches();
+        } else {
+            // Pastors, coaches, and mentors can only edit members from their own church
+            if ($churchId) {
+                $churches = [$this->churchModel->findById($churchId)];
+            } else {
+                $churches = [];
+            }
+        }
+        
+        // Get coaches based on user role and church
+        $coaches = [];
+        if ($userRole === ROLE_SUPER_ADMIN) {
+            $coaches = $this->userModel->getCoachesForSelection();
+        } elseif ($userRole === ROLE_COACH) {
+            // Coaches can only assign members to themselves
+            $coaches = [$this->userModel->findById($_SESSION['user_id'])];
+        } elseif ($userRole === ROLE_MENTOR) {
+            // Mentors can only assign members to their coach
+            $currentCoach = $this->userModel->getHierarchyParent($_SESSION['user_id']);
+            if ($currentCoach && $currentCoach['role'] === 'coach') {
+                $coaches = [$currentCoach];
+            } else {
+                $coaches = [];
+            }
+        } elseif ($churchId) {
+            $coaches = $this->userModel->getCoachesByChurch($churchId);
+        }
         
         // Get current mentor assignment (members are directly assigned to mentors)
         $currentMentor = $this->userModel->getHierarchyParent((int) $id);
@@ -223,21 +572,55 @@ class MemberController extends Controller
             $currentCoach = $this->userModel->getHierarchyParent($currentMentor['id']);
         }
         
+        // Get mentors based on user role
+        $mentors = [];
+        if ($userRole === ROLE_SUPER_ADMIN) {
+            $mentors = $this->userModel->getMentorsForSelection();
+        } elseif ($userRole === ROLE_COACH) {
+            // Coaches can see mentors under them
+            $mentors = $this->userModel->getMentorsByCoach($_SESSION['user_id']);
+        } elseif ($userRole === ROLE_MENTOR) {
+            // Mentors can only assign members to themselves
+            $currentMentor = $this->userModel->findById($_SESSION['user_id']);
+            $mentors = [$currentMentor];
+        } elseif ($churchId) {
+            $mentors = $this->userModel->getMentorsByChurch($churchId);
+        }
+
+        // Get lifegroups based on user role
+        $lifegroups = [];
+        if ($userRole === ROLE_SUPER_ADMIN) {
+            $lifegroups = $this->lifegroupModel->getAllLifegroups();
+        } elseif ($userRole === ROLE_COACH) {
+            // Coaches can see lifegroups under their mentors
+            $lifegroups = $this->lifegroupModel->getLifegroupsByCoach($_SESSION['user_id']);
+        } elseif ($userRole === ROLE_MENTOR) {
+            // Mentors can only assign members to their own lifegroups
+            $lifegroups = $this->lifegroupModel->getLifegroupsByMentor($_SESSION['user_id']);
+        } elseif ($churchId) {
+            $lifegroups = $this->lifegroupModel->getLifegroupsByChurch($churchId);
+        }
+
         // Get current lifegroup assignment
         $currentLifegroup = $this->lifegroupModel->getMemberLifegroup((int) $id);
         
         $this->view('member/edit', [
             'member' => $member, 
             'churches' => $churches,
+            'coaches' => $coaches,
+            'mentors' => $mentors,
+            'lifegroups' => $lifegroups,
             'currentCoach' => $currentCoach,
             'currentMentor' => $currentMentor,
-            'currentLifegroup' => $currentLifegroup
+            'currentLifegroup' => $currentLifegroup,
+            'userRole' => $userRole,
+            'currentUserId' => $_SESSION['user_id']
         ]);
     }
     
     public function update(string $id): void
     {
-        $this->requireRole(ROLE_MENTOR);
+        $this->requireRole([ROLE_MENTOR, ROLE_COACH]);
         
         $memberId = (int) $id;
         $member = $this->userModel->findById($memberId);
@@ -263,13 +646,64 @@ class MemberController extends Controller
         // Validate required fields
         if (empty($data['name'])) {
             flash('Name is required', 'error');
+            
+            // Get restricted data for error view
+            $userRole = $this->getUserRole();
+            $churchId = $_SESSION['church_id'] ?? null;
+            
+            if ($churchId === null) {
+                $user = $this->userModel->findById($_SESSION['user_id']);
+                if ($user && isset($user['church_id'])) {
+                    $churchId = $user['church_id'];
+                }
+            }
+            
+            $churches = [];
+            $coaches = [];
+            
+            if ($userRole === ROLE_SUPER_ADMIN) {
+                $churches = $this->churchModel->getAllChurches();
+                $coaches = $this->userModel->getCoachesForSelection();
+            } elseif ($userRole === ROLE_COACH) {
+                // Coaches can only assign members to themselves
+                $churches = [$this->churchModel->findById($churchId)];
+                $coaches = [$this->userModel->findById($_SESSION['user_id'])];
+            } elseif ($userRole === ROLE_MENTOR) {
+                // Mentors can only assign members to their church and coach
+                $churches = [$this->churchModel->findById($churchId)];
+                $currentCoach = $this->userModel->getHierarchyParent($_SESSION['user_id']);
+                if ($currentCoach && $currentCoach['role'] === 'coach') {
+                    $coaches = [$currentCoach];
+                } else {
+                    $coaches = [];
+                }
+            } elseif ($churchId) {
+                $churches = [$this->churchModel->findById($churchId)];
+                $coaches = $this->userModel->getCoachesByChurch($churchId);
+            }
+            
+            // Get mentors for error view
+            $mentors = [];
+            if ($userRole === ROLE_SUPER_ADMIN) {
+                $mentors = $this->userModel->getMentorsForSelection();
+            } elseif ($userRole === ROLE_COACH) {
+                $mentors = $this->userModel->getMentorsByCoach($_SESSION['user_id']);
+            } elseif ($userRole === ROLE_MENTOR) {
+                $currentMentor = $this->userModel->findById($_SESSION['user_id']);
+                $mentors = [$currentMentor];
+            } elseif ($churchId) {
+                $mentors = $this->userModel->getMentorsByChurch($churchId);
+            }
+            
             $this->view('member/edit', [
                 'member' => array_merge($member, $data, [
                     'coach_id' => $_POST['coach_id'] ?? null,
                     'mentor_id' => $_POST['mentor_id'] ?? null,
                     'lifegroup_id' => $_POST['lifegroup_id'] ?? null
                 ]),
-                'churches' => $this->churchModel->getAllChurches(),
+                'churches' => $churches,
+                'coaches' => $coaches,
+                'mentors' => $mentors,
                 'currentCoach' => null,
                 'currentMentor' => null,
                 'currentLifegroup' => null
@@ -283,13 +717,37 @@ class MemberController extends Controller
             $existingUser = $this->userModel->findByEmail($data['email']);
             if ($existingUser && $existingUser['id'] != $memberId) {
                 flash('Email address already exists', 'error');
+                
+                // Get restricted data for error view
+                $userRole = $this->getUserRole();
+                $churchId = $_SESSION['church_id'] ?? null;
+                
+                if ($churchId === null) {
+                    $user = $this->userModel->findById($_SESSION['user_id']);
+                    if ($user && isset($user['church_id'])) {
+                        $churchId = $user['church_id'];
+                    }
+                }
+                
+                $churches = [];
+                $coaches = [];
+                
+                if ($userRole === ROLE_SUPER_ADMIN) {
+                    $churches = $this->churchModel->getAllChurches();
+                    $coaches = $this->userModel->getCoachesForSelection();
+                } elseif ($churchId) {
+                    $churches = [$this->churchModel->findById($churchId)];
+                    $coaches = $this->userModel->getCoachesByChurch($churchId);
+                }
+                
                 $this->view('member/edit', [
                     'member' => array_merge($member, $data, [
                         'coach_id' => $_POST['coach_id'] ?? null,
                         'mentor_id' => $_POST['mentor_id'] ?? null,
                         'lifegroup_id' => $_POST['lifegroup_id'] ?? null
                     ]),
-                    'churches' => $this->churchModel->getAllChurches(),
+                    'churches' => $churches,
+                    'coaches' => $coaches,
                     'currentCoach' => null,
                     'currentMentor' => null,
                     'currentLifegroup' => null
@@ -331,13 +789,37 @@ class MemberController extends Controller
             $this->redirect('/member');
         } else {
             flash('Failed to update member', 'error');
+            
+            // Get restricted data for error view
+            $userRole = $this->getUserRole();
+            $churchId = $_SESSION['church_id'] ?? null;
+            
+            if ($churchId === null) {
+                $user = $this->userModel->findById($_SESSION['user_id']);
+                if ($user && isset($user['church_id'])) {
+                    $churchId = $user['church_id'];
+                }
+            }
+            
+            $churches = [];
+            $coaches = [];
+            
+            if ($userRole === ROLE_SUPER_ADMIN) {
+                $churches = $this->churchModel->getAllChurches();
+                $coaches = $this->userModel->getCoachesForSelection();
+            } elseif ($churchId) {
+                $churches = [$this->churchModel->findById($churchId)];
+                $coaches = $this->userModel->getCoachesByChurch($churchId);
+            }
+            
             $this->view('member/edit', [
                 'member' => array_merge($member, $data, [
                     'coach_id' => $_POST['coach_id'] ?? null,
                     'mentor_id' => $_POST['mentor_id'] ?? null,
                     'lifegroup_id' => $_POST['lifegroup_id'] ?? null
                 ]),
-                'churches' => $this->churchModel->getAllChurches(),
+                'churches' => $churches,
+                'coaches' => $coaches,
                 'currentCoach' => null,
                 'currentMentor' => null,
                 'currentLifegroup' => null
@@ -347,7 +829,7 @@ class MemberController extends Controller
     
     public function delete(string $id): void
     {
-        $this->requireRole(ROLE_MENTOR);
+        $this->requireRole([ROLE_MENTOR, ROLE_COACH]);
         
         $memberId = (int) $id;
         $member = $this->userModel->findById($memberId);
@@ -371,7 +853,7 @@ class MemberController extends Controller
     
     public function updateStatus(string $id): void
     {
-        $this->requireRole(ROLE_MENTOR);
+        $this->requireRole([ROLE_MENTOR, ROLE_COACH]);
         
         $memberId = (int) $id;
         $status = $_POST['status'] ?? '';
@@ -392,7 +874,7 @@ class MemberController extends Controller
     
     public function getCoachesByChurch(string $churchId): void
     {
-        $this->requireRole(ROLE_MENTOR);
+        $this->requireRole([ROLE_MENTOR, ROLE_COACH]);
         
         $coaches = $this->userModel->getCoachesByChurch((int) $churchId);
         
@@ -403,7 +885,7 @@ class MemberController extends Controller
     
     public function getMentorsByChurch(string $churchId): void
     {
-        $this->requireRole(ROLE_MENTOR);
+        $this->requireRole([ROLE_MENTOR, ROLE_COACH]);
         
         $mentors = $this->userModel->getMentorsByChurch((int) $churchId);
         
@@ -414,7 +896,7 @@ class MemberController extends Controller
     
     public function getMentorsByCoach(string $coachId): void
     {
-        $this->requireRole(ROLE_MENTOR);
+        $this->requireRole([ROLE_MENTOR, ROLE_COACH]);
         
         $mentors = $this->userModel->getMentorsByCoach((int) $coachId);
         
@@ -425,7 +907,7 @@ class MemberController extends Controller
     
     public function getLifegroupsByMentor(string $mentorId): void
     {
-        $this->requireRole(ROLE_MENTOR);
+        $this->requireRole([ROLE_MENTOR, ROLE_COACH]);
         
         $lifegroups = $this->lifegroupModel->getLifegroupsByMentor((int) $mentorId);
         

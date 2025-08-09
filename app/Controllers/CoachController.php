@@ -129,7 +129,21 @@ class CoachController extends Controller
             $this->redirect('/coach');
         } else {
             flash('Failed to create coach', 'error');
-            $this->view('coach/create', ['data' => $data]);
+            
+            // Get restricted data for error view
+            $churchModel = new \App\Models\ChurchModel();
+            $churches = [];
+            
+            if ($userRole === ROLE_SUPER_ADMIN) {
+                $churches = $churchModel->getAllChurches();
+            } elseif ($churchId) {
+                $churches = [$churchModel->findById($churchId)];
+            }
+            
+            $this->view('coach/create', [
+                'data' => $data,
+                'churches' => $churches
+            ]);
         }
     }
     
@@ -234,7 +248,21 @@ class CoachController extends Controller
             $this->redirect('/coach');
         } else {
             flash('Failed to update coach', 'error');
-            $this->view('coach/edit', ['coach' => $coach]);
+            
+            // Get restricted data for error view
+            $churchModel = new \App\Models\ChurchModel();
+            $churches = [];
+            
+            if ($userRole === ROLE_SUPER_ADMIN) {
+                $churches = $churchModel->getAllChurches();
+            } elseif ($churchId) {
+                $churches = [$churchModel->findById($churchId)];
+            }
+            
+            $this->view('coach/edit', [
+                'coach' => $coach, 
+                'churches' => $churches
+            ]);
         }
     }
     

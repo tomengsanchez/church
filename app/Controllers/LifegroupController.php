@@ -92,13 +92,14 @@ class LifegroupController extends Controller
             $churches = $this->churchModel->getAllChurches();
             $mentors = [];
             
-            $this->view('lifegroup/create', [
-                'title' => 'Create Lifegroup',
-                'mentors' => $mentors,
-                'churches' => $churches,
-                'data' => [],
-                'isSuperAdmin' => true
-            ]);
+                    $this->view('lifegroup/create', [
+            'title' => 'Create Lifegroup',
+            'mentors' => $mentors,
+            'churches' => $churches,
+            'data' => [],
+            'isSuperAdmin' => true,
+            'userRole' => $userRole
+        ]);
             return;
         }
         
@@ -112,8 +113,13 @@ class LifegroupController extends Controller
         if ($userRole === ROLE_COACH) {
             // Coaches can only create lifegroups for mentors assigned to them
             $mentors = $this->userModel->getMentorsByCoach($userId);
+        } elseif ($userRole === ROLE_MENTOR) {
+            // Mentors can see themselves and other mentors under their coach
+            $coach = $this->userModel->getHierarchyParent($userId);
+            $coachId = $coach ? $coach['id'] : null;
+            $mentors = $coachId ? $this->userModel->getMentorsByCoach($coachId) : [];
         } else {
-            // Pastors and mentors can see all mentors from their church
+            // Pastors can see all mentors from their church
             $mentors = $this->lifegroupModel->getAvailableMentors((int)$churchId);
         }
         
@@ -121,7 +127,8 @@ class LifegroupController extends Controller
             'title' => 'Create Lifegroup',
             'mentors' => $mentors,
             'data' => [],
-            'isSuperAdmin' => false
+            'isSuperAdmin' => false,
+            'userRole' => $userRole
         ]);
     }
     
@@ -253,15 +260,21 @@ class LifegroupController extends Controller
         if ($userRole === ROLE_COACH) {
             // Coaches can only assign mentors assigned to them
             $mentors = $this->userModel->getMentorsByCoach($userId);
+        } elseif ($userRole === ROLE_MENTOR) {
+            // Mentors can see themselves and other mentors under their coach
+            $coach = $this->userModel->getHierarchyParent($userId);
+            $coachId = $coach ? $coach['id'] : null;
+            $mentors = $coachId ? $this->userModel->getMentorsByCoach($coachId) : [];
         } else {
-            // Pastors and mentors can see all mentors from their church
+            // Pastors can see all mentors from their church
             $mentors = $this->lifegroupModel->getAvailableMentors($churchId);
         }
         
         $this->view('lifegroup/edit', [
             'title' => 'Edit Lifegroup',
             'lifegroup' => $lifegroup,
-            'mentors' => $mentors
+            'mentors' => $mentors,
+            'userRole' => $userRole
         ]);
     }
     
