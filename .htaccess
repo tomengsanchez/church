@@ -1,37 +1,101 @@
+# DDoS Protection and Security Headers
+# This file provides additional server-level protection
+
+# Enable rewrite engine
 RewriteEngine On
 
-# Handle Authorization Header
-RewriteCond %{HTTP:Authorization} .
-RewriteRule .* - [E=HTTP_AUTHORIZATION:%{HTTP:Authorization}]
+# Block suspicious user agents
+RewriteCond %{HTTP_USER_AGENT} (bot|crawler|spider|scraper|curl|wget|python|java) [NC]
+RewriteRule .* - [F,L]
 
-# Redirect Trailing Slashes If Not A Folder...
-RewriteCond %{REQUEST_FILENAME} !-d
-RewriteCond %{REQUEST_URI} (.+)/$
-RewriteRule ^ %1 [L,R=301]
+# Block requests with suspicious headers
+RewriteCond %{HTTP:X_FORWARDED_FOR} !^$
+RewriteCond %{HTTP:X_FORWARDED_FOR} !^([0-9]{1,3}\.){3}[0-9]{1,3}$
+RewriteRule .* - [F,L]
 
-# Send Requests To Front Controller...
-RewriteCond %{REQUEST_FILENAME} !-d
-RewriteCond %{REQUEST_FILENAME} !-f
-RewriteRule ^ index.php [L]
+# Block requests with suspicious query strings
+RewriteCond %{QUERY_STRING} (eval|base64|javascript|vbscript|onload|onerror) [NC,OR]
+RewriteCond %{QUERY_STRING} (union|select|insert|drop|delete|update|exec) [NC]
+RewriteRule .* - [F,L]
+
+# Block requests to sensitive files
+<FilesMatch "\.(htaccess|htpasswd|ini|log|sh|sql|conf)$">
+    Order Allow,Deny
+    Deny from all
+</FilesMatch>
+
+# Block access to hidden files
+<FilesMatch "^\.">
+    Order Allow,Deny
+    Deny from all
+</FilesMatch>
+
+# Block access to backup files
+<FilesMatch "\.(bak|backup|old|orig|save|swp|tmp)$">
+    Order Allow,Deny
+    Deny from all
+</FilesMatch>
 
 # Security Headers
 <IfModule mod_headers.c>
+    # Prevent clickjacking
+    Header always append X-Frame-Options SAMEORIGIN
+    
+    # Prevent MIME type sniffing
     Header always set X-Content-Type-Options nosniff
-    Header always set X-Frame-Options DENY
+    
+    # Enable XSS protection
     Header always set X-XSS-Protection "1; mode=block"
+    
+    # Referrer Policy
     Header always set Referrer-Policy "strict-origin-when-cross-origin"
+    
+    # Content Security Policy
+    Header always set Content-Security-Policy "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self'; connect-src 'self';"
+    
+    # Remove server signature
+    Header unset Server
+    Header unset X-Powered-By
 </IfModule>
 
-# Prevent access to sensitive files
-<FilesMatch "^\.">
-    Order allow,deny
-    Deny from all
-</FilesMatch>
+# Rate Limiting (if mod_ratelimit is available)
+<IfModule mod_ratelimit.c>
+    # Limit requests per IP
+    <Location />
+        SetOutputFilter RATE_LIMIT
+        SetEnv rate-limit 100
+    </Location>
+</IfModule>
 
-<FilesMatch "\.(env|log|sql|md|txt)$">
-    Order allow,deny
-    Deny from all
-</FilesMatch>
+# Block bad bots and crawlers
+RewriteCond %{HTTP_USER_AGENT} (AhrefsBot|Baiduspider|DotBot|MJ12bot|SemrushBot|spbot|YandexBot) [NC]
+RewriteRule .* - [F,L]
+
+# Block requests from known bad IP ranges (example)
+# RewriteCond %{REMOTE_ADDR} ^(192\.168\.|10\.|172\.(1[6-9]|2[0-9]|3[0-1])\.) [NC]
+# RewriteRule .* - [F,L]
+
+# Limit request size
+LimitRequestBody 1048576
+
+# Limit request line length
+LimitRequestLine 4096
+
+# Limit request fields
+LimitRequestFields 100
+
+# Limit request field size
+LimitRequestFieldSize 4096
+
+# Block access to sensitive directories
+RedirectMatch 403 ^/logs/?$
+RedirectMatch 403 ^/database/?$
+RedirectMatch 403 ^/vendor/?$
+
+# Custom error pages
+ErrorDocument 403 /app/views/errors/403.php
+ErrorDocument 404 /app/views/errors/404.php
+ErrorDocument 500 /app/views/errors/500.php
 
 # Enable compression
 <IfModule mod_deflate.c>
@@ -46,7 +110,7 @@ RewriteRule ^ index.php [L]
     AddOutputFilterByType DEFLATE application/x-javascript
 </IfModule>
 
-# Cache static assets
+# Cache static files
 <IfModule mod_expires.c>
     ExpiresActive on
     ExpiresByType text/css "access plus 1 year"
@@ -59,5 +123,5 @@ RewriteRule ^ index.php [L]
     ExpiresByType image/icon "access plus 1 year"
     ExpiresByType text/plain "access plus 1 month"
     ExpiresByType application/pdf "access plus 1 month"
-    ExpiresByType application/x-shockwave-flash "access plus 1 month"
+    ExpiresByType application/zip "access plus 1 month"
 </IfModule> 
