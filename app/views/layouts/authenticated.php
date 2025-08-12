@@ -117,27 +117,6 @@
                         </ul>
                     </li>
                     <?php endif; ?>
-                    
-                    <!-- Admin Tools Dropdown -->
-                    <?php if (hasPermission(ROLE_SUPER_ADMIN)): ?>
-                    <li class="nav-item dropdown">
-                        <a class="nav-link dropdown-toggle" href="#" id="adminDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
-                            <i class="fas fa-tools me-1"></i>Admin Tools
-                        </a>
-                        <ul class="dropdown-menu shadow-sm" aria-labelledby="adminDropdown">
-                            <li>
-                                <a class="dropdown-item" href="/ddos-protection">
-                                    <i class="fas fa-shield-alt me-2"></i>DDoS Protection
-                                </a>
-                            </li>
-                            <li>
-                                <a class="dropdown-item" href="/errorlog">
-                                    <i class="fas fa-exclamation-triangle me-2"></i>Error Logs
-                                </a>
-                            </li>
-                        </ul>
-                    </li>
-                    <?php endif; ?>
                 </ul>
                 
                 <ul class="navbar-nav">

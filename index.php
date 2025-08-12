@@ -7,15 +7,6 @@ require_once __DIR__ . '/vendor/autoload.php';
 // Load configuration
 require_once __DIR__ . '/app/config/config.php';
 
-// Initialize DDoS protection
-use App\Core\DdosProtection;
-$ddosProtection = new DdosProtection();
-
-// Apply DDoS protection before processing any request
-if (!$ddosProtection->protect()) {
-    exit; // Request blocked by DDoS protection
-}
-
 use App\Core\Router;
 use App\Core\Database;
 use App\Controllers\AuthController;
@@ -30,7 +21,6 @@ use App\Controllers\ChurchEventController;
 use App\Controllers\SatelifeEventController;
 use App\Controllers\LifegroupEventController;
 use App\Controllers\LifegroupController;
-use App\Controllers\DdosProtectionController;
 
 // Initialize database connection
 Database::getInstance();
@@ -108,12 +98,6 @@ $router->post('/member/edit/{id}', [MemberController::class, 'update']);
 $router->post('/member/delete/{id}', [MemberController::class, 'delete']);
 $router->post('/member/status/{id}', [MemberController::class, 'updateStatus']);
 $router->get('/member/coaches/{churchId}', [MemberController::class, 'getCoachesByChurch']);
-
-// DDoS Protection routes (Super Admin only)
-$router->get('/ddos-protection', [DdosProtectionController::class, 'index']);
-$router->get('/ddos-protection/logs', [DdosProtectionController::class, 'logs']);
-$router->post('/ddos-protection/unblock-ip', [DdosProtectionController::class, 'unblockIp']);
-$router->post('/ddos-protection/clear-logs', [DdosProtectionController::class, 'clearLogs']);
 $router->get('/member/mentors/{churchId}', [MemberController::class, 'getMentorsByChurch']);
 $router->get('/member/mentors-by-coach/{coachId}', [MemberController::class, 'getMentorsByCoach']);
 $router->get('/member/lifegroups-by-mentor/{mentorId}', [MemberController::class, 'getLifegroupsByMentor']);
