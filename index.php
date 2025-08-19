@@ -21,6 +21,7 @@ use App\Controllers\ChurchEventController;
 use App\Controllers\SatelifeEventController;
 use App\Controllers\LifegroupEventController;
 use App\Controllers\LifegroupController;
+use App\Controllers\SettingsController;
 
 // Initialize database connection
 Database::getInstance();
@@ -115,6 +116,12 @@ $router->post('/errorlog/delete/{id}', [ErrorLogController::class, 'delete']);
 $router->post('/errorlog/clear-old', [ErrorLogController::class, 'clearOld']);
 $router->post('/errorlog/clear-all', [ErrorLogController::class, 'clearAll']);
 $router->get('/errorlog/export', [ErrorLogController::class, 'export']);
+
+// Settings routes
+$router->get('/settings', [SettingsController::class, 'index']);
+$router->post('/settings/status/create', [SettingsController::class, 'createStatus']);
+$router->post('/settings/status/edit/{id}', [SettingsController::class, 'editStatus']);
+$router->post('/settings/status/delete/{id}', [SettingsController::class, 'deleteStatus']);
 
 // Test route for demonstrating error logging
 $router->get('/test-logs', function() {

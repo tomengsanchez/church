@@ -7,6 +7,7 @@ use App\Models\MemberModel;
 use App\Models\UserModel;
 use App\Models\ChurchModel;
 use App\Models\LifegroupModel;
+use App\Models\MemberStatusModel;
 
 class MemberController extends Controller
 {
@@ -14,6 +15,7 @@ class MemberController extends Controller
     private UserModel $userModel;
     private ChurchModel $churchModel;
     private LifegroupModel $lifegroupModel;
+    private MemberStatusModel $memberStatusModel;
     
     public function __construct()
     {
@@ -21,6 +23,7 @@ class MemberController extends Controller
         $this->userModel = new UserModel();
         $this->churchModel = new ChurchModel();
         $this->lifegroupModel = new LifegroupModel();
+        $this->memberStatusModel = new MemberStatusModel();
     }
     
     public function index(): void
@@ -176,11 +179,13 @@ class MemberController extends Controller
             'lifegroups' => $lifegroups,
             'userRole' => $userRole,
             'currentUserId' => $_SESSION['user_id'],
+            'memberStatuses' => $this->memberStatusModel->getAllActive(),
             'data' => [
                 'church_id' => in_array($userRole, [ROLE_COACH, ROLE_MENTOR]) ? $churchId : null,
                 'coach_id' => $userRole === ROLE_COACH ? $_SESSION['user_id'] : ($userRole === ROLE_MENTOR ? ($coaches[0]['id'] ?? null) : null),
                 'mentor_id' => $userRole === ROLE_MENTOR ? $_SESSION['user_id'] : null,
-                'lifegroup_id' => null
+                'lifegroup_id' => null,
+                'status' => 'active'
             ]
         ]);
     }
@@ -199,6 +204,41 @@ class MemberController extends Controller
             'status' => $_POST['status'] ?? 'active',
             'role' => 'member'
         ];
+
+        // Validate status against active statuses
+        $validStatuses = array_map(fn($s) => $s['slug'], $this->memberStatusModel->getAllActive());
+        if (!in_array($data['status'], $validStatuses, true)) {
+            flash('Invalid status', 'error');
+
+            // Re-render with selections
+            $userRole = $this->getUserRole();
+            $churchId = $_SESSION['church_id'] ?? null;
+            if ($churchId === null) {
+                $user = $this->userModel->findById($_SESSION['user_id']);
+                if ($user && isset($user['church_id'])) {
+                    $churchId = $user['church_id'];
+                }
+            }
+            $churches = $userRole === ROLE_SUPER_ADMIN ? $this->churchModel->getAllChurches() : ($churchId ? [$this->churchModel->findById($churchId)] : []);
+            $coaches = $userRole === ROLE_SUPER_ADMIN ? $this->userModel->getCoachesForSelection() : ($churchId ? $this->userModel->getCoachesByChurch($churchId) : []);
+            $mentors = $userRole === ROLE_SUPER_ADMIN ? $this->userModel->getMentorsForSelection() : ($churchId ? $this->userModel->getMentorsByChurch($churchId) : []);
+
+            $this->view('member/create', [
+                'data' => array_merge($data, [
+                    'coach_id' => $_POST['coach_id'] ?? null,
+                    'mentor_id' => $_POST['mentor_id'] ?? null,
+                    'lifegroup_id' => $_POST['lifegroup_id'] ?? null
+                ]),
+                'churches' => $churches,
+                'coaches' => $coaches,
+                'mentors' => $mentors,
+                'lifegroups' => $userRole === ROLE_MENTOR ? $this->lifegroupModel->getLifegroupsByMentor($_SESSION['user_id']) : [],
+                'userRole' => $userRole,
+                'currentUserId' => $_SESSION['user_id'],
+                'memberStatuses' => $this->memberStatusModel->getAllActive()
+            ]);
+            return;
+        }
         
         // Validate required fields
         if (empty($data['name'])) {
@@ -250,7 +290,8 @@ class MemberController extends Controller
                 'mentors' => $mentors,
                 'lifegroups' => $userRole === ROLE_MENTOR ? $this->lifegroupModel->getLifegroupsByMentor($_SESSION['user_id']) : [],
                 'userRole' => $userRole,
-                'currentUserId' => $_SESSION['user_id']
+                'currentUserId' => $_SESSION['user_id'],
+                'memberStatuses' => $this->memberStatusModel->getAllActive()
             ]);
             return;
         }
@@ -320,7 +361,8 @@ class MemberController extends Controller
                     'mentors' => $mentors,
                     'lifegroups' => $userRole === ROLE_MENTOR ? $this->lifegroupModel->getLifegroupsByMentor($_SESSION['user_id']) : [],
                     'userRole' => $userRole,
-                    'currentUserId' => $_SESSION['user_id']
+                    'currentUserId' => $_SESSION['user_id'],
+                    'memberStatuses' => $this->memberStatusModel->getAllActive()
                 ]);
                 return;
             }
@@ -390,7 +432,8 @@ class MemberController extends Controller
                     'mentors' => $mentors,
                     'lifegroups' => $userRole === ROLE_MENTOR ? $this->lifegroupModel->getLifegroupsByMentor($_SESSION['user_id']) : [],
                     'userRole' => $userRole,
-                    'currentUserId' => $_SESSION['user_id']
+                    'currentUserId' => $_SESSION['user_id'],
+                    'memberStatuses' => $this->memberStatusModel->getAllActive()
                 ]);
                 return;
             }
@@ -504,7 +547,8 @@ class MemberController extends Controller
                 'mentors' => $mentors,
                 'lifegroups' => $userRole === ROLE_MENTOR ? $this->lifegroupModel->getLifegroupsByMentor($_SESSION['user_id']) : [],
                 'userRole' => $userRole,
-                'currentUserId' => $_SESSION['user_id']
+                'currentUserId' => $_SESSION['user_id'],
+                'memberStatuses' => $this->memberStatusModel->getAllActive()
             ]);
         }
     }
@@ -614,7 +658,8 @@ class MemberController extends Controller
             'currentMentor' => $currentMentor,
             'currentLifegroup' => $currentLifegroup,
             'userRole' => $userRole,
-            'currentUserId' => $_SESSION['user_id']
+            'currentUserId' => $_SESSION['user_id'],
+            'memberStatuses' => $this->memberStatusModel->getAllActive()
         ]);
     }
     
@@ -638,6 +683,41 @@ class MemberController extends Controller
             'church_id' => $_POST['church_id'] ?? null,
             'status' => $_POST['status'] ?? 'active'
         ];
+
+        // Validate status against active statuses
+        $validStatuses = array_map(fn($s) => $s['slug'], $this->memberStatusModel->getAllActive());
+        if (!in_array($data['status'], $validStatuses, true)) {
+            flash('Invalid status', 'error');
+            
+            // Re-render edit with context
+            $userRole = $this->getUserRole();
+            $churchId = $_SESSION['church_id'] ?? null;
+            if ($churchId === null) {
+                $user = $this->userModel->findById($_SESSION['user_id']);
+                if ($user && isset($user['church_id'])) {
+                    $churchId = $user['church_id'];
+                }
+            }
+            $churches = $userRole === ROLE_SUPER_ADMIN ? $this->churchModel->getAllChurches() : ($churchId ? [$this->churchModel->findById($churchId)] : []);
+            $coaches = $userRole === ROLE_SUPER_ADMIN ? $this->userModel->getCoachesForSelection() : ($churchId ? $this->userModel->getCoachesByChurch($churchId) : []);
+            $mentors = $userRole === ROLE_SUPER_ADMIN ? $this->userModel->getMentorsForSelection() : ($churchId ? $this->userModel->getMentorsByChurch($churchId) : []);
+            $lifegroups = $userRole === ROLE_SUPER_ADMIN ? $this->lifegroupModel->getAllLifegroups() : ($churchId ? $this->lifegroupModel->getLifegroupsByChurch($churchId) : []);
+
+            $this->view('member/edit', [
+                'member' => array_merge($member, $data),
+                'churches' => $churches,
+                'coaches' => $coaches,
+                'mentors' => $mentors,
+                'lifegroups' => $lifegroups,
+                'currentCoach' => null,
+                'currentMentor' => null,
+                'currentLifegroup' => null,
+                'userRole' => $userRole,
+                'currentUserId' => $_SESSION['user_id'],
+                'memberStatuses' => $this->memberStatusModel->getAllActive()
+            ]);
+            return;
+        }
         
         if (!empty($_POST['password'])) {
             $data['password'] = $_POST['password'];
@@ -706,7 +786,8 @@ class MemberController extends Controller
                 'mentors' => $mentors,
                 'currentCoach' => null,
                 'currentMentor' => null,
-                'currentLifegroup' => null
+                'currentLifegroup' => null,
+                'memberStatuses' => $this->memberStatusModel->getAllActive()
             ]);
             return;
         }
@@ -750,7 +831,8 @@ class MemberController extends Controller
                     'coaches' => $coaches,
                     'currentCoach' => null,
                     'currentMentor' => null,
-                    'currentLifegroup' => null
+                    'currentLifegroup' => null,
+                    'memberStatuses' => $this->memberStatusModel->getAllActive()
                 ]);
                 return;
             }
@@ -822,7 +904,8 @@ class MemberController extends Controller
                 'coaches' => $coaches,
                 'currentCoach' => null,
                 'currentMentor' => null,
-                'currentLifegroup' => null
+                'currentLifegroup' => null,
+                'memberStatuses' => $this->memberStatusModel->getAllActive()
             ]);
         }
     }
@@ -858,7 +941,8 @@ class MemberController extends Controller
         $memberId = (int) $id;
         $status = $_POST['status'] ?? '';
         
-        if (!in_array($status, [STATUS_ACTIVE, STATUS_INACTIVE, STATUS_PENDING, STATUS_SUSPENDED])) {
+        $validStatuses = array_map(fn($s) => $s['slug'], $this->memberStatusModel->getAllActive());
+        if (!in_array($status, $validStatuses, true)) {
             flash('Invalid status', 'error');
             $this->redirect('/member');
         }

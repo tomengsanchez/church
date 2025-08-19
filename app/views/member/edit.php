@@ -140,10 +140,20 @@
                         <div class="col-md-6 mb-3">
                             <label for="status" class="form-label">Status *</label>
                             <select class="form-select" id="status" name="status" required>
-                                <option value="active" <?= $member['status'] === 'active' ? 'selected' : '' ?>>Active</option>
-                                <option value="inactive" <?= $member['status'] === 'inactive' ? 'selected' : '' ?>>Inactive</option>
-                                <option value="pending" <?= $member['status'] === 'pending' ? 'selected' : '' ?>>Pending</option>
-                                <option value="suspended" <?= $member['status'] === 'suspended' ? 'selected' : '' ?>>Suspended</option>
+                                <?php if (!empty($memberStatuses ?? [])): ?>
+                                    <?php foreach ($memberStatuses as $status): ?>
+                                        <?php if ((int)$status['is_active'] === 1): ?>
+                                            <option value="<?= htmlspecialchars($status['slug']) ?>" <?= ($member['status'] === $status['slug']) ? 'selected' : '' ?>>
+                                                <?= htmlspecialchars($status['name']) ?>
+                                            </option>
+                                        <?php endif; ?>
+                                    <?php endforeach; ?>
+                                <?php else: ?>
+                                    <option value="active" <?= $member['status'] === 'active' ? 'selected' : '' ?>>Active</option>
+                                    <option value="inactive" <?= $member['status'] === 'inactive' ? 'selected' : '' ?>>Inactive</option>
+                                    <option value="pending" <?= $member['status'] === 'pending' ? 'selected' : '' ?>>Pending</option>
+                                    <option value="suspended" <?= $member['status'] === 'suspended' ? 'selected' : '' ?>>Suspended</option>
+                                <?php endif; ?>
                             </select>
                         </div>
                     </div>

@@ -119,7 +119,7 @@
                     <?php endif; ?>
                 </ul>
                 
-                <ul class="navbar-nav">
+                <ul class="navbar-nav ms-auto">
                     <li class="nav-item dropdown">
                         <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button" data-bs-toggle="dropdown">
                             <i class="fas fa-user-circle me-1"></i><?= $_SESSION['user_name'] ?>
@@ -138,6 +138,26 @@
                             </li>
                         </ul>
                     </li>
+                    <?php if (hasPermission(ROLE_SUPER_ADMIN)): ?>
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle" href="#" id="systemDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                            <i class="fas fa-gear me-1"></i>System Settings
+                        </a>
+                        <ul class="dropdown-menu dropdown-menu-end shadow-sm" aria-labelledby="systemDropdown">
+                            <li>
+                                <a class="dropdown-item" href="/settings">
+                                    <i class="fas fa-sliders-h me-2"></i>Settings Home
+                                </a>
+                            </li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li>
+                                <a class="dropdown-item" href="/settings#member-statuses">
+                                    <i class="fas fa-user-check me-2"></i>Member Statuses
+                                </a>
+                            </li>
+                        </ul>
+                    </li>
+                    <?php endif; ?>
                 </ul>
             </div>
         </div>
