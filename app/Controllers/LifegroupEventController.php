@@ -6,18 +6,21 @@ use App\Core\Controller;
 use App\Models\LifegroupEventModel;
 use App\Models\ChurchModel;
 use App\Models\LifegroupModel;
+use App\Models\EventAttendeeModel;
 
 class LifegroupEventController extends Controller
 {
     private LifegroupEventModel $eventModel;
     private ChurchModel $churchModel;
     private LifegroupModel $lifegroupModel;
+    private EventAttendeeModel $attendeeModel;
     
     public function __construct()
     {
         $this->eventModel = new LifegroupEventModel();
         $this->churchModel = new ChurchModel();
         $this->lifegroupModel = new LifegroupModel();
+        $this->attendeeModel = new EventAttendeeModel();
     }
     
     public function index(): void
@@ -90,7 +93,12 @@ class LifegroupEventController extends Controller
             $data['lifegroup_id'] = $lifegroupId;
         }
 
-        $this->eventModel->create($data);
+        $eventId = $this->eventModel->create($data);
+
+        // Attendance handling
+        $attendees = isset($_POST['attendees']) && is_array($_POST['attendees']) ? array_map('intval', $_POST['attendees']) : [];
+        $this->attendeeModel->setAttendedUsers('lifegroup', (int)$eventId, $attendees);
+
         flash('Lifegroup event created successfully.', 'success');
         $this->redirect('/events/lifegroup');
     }
@@ -107,11 +115,36 @@ class LifegroupEventController extends Controller
             $this->redirect('/events/lifegroup');
         }
 
+        $lifegroups = $this->getLifegroupsForCurrentUser();
+        $selectedLifegroupId = (int)($event['lifegroup_id'] ?? 0);
+        if ($selectedLifegroupId > 0) {
+            $found = false;
+            foreach ($lifegroups as $lg) {
+                if ((int)$lg['id'] === $selectedLifegroupId) { $found = true; break; }
+            }
+            if (!$found) {
+                $existingLg = $this->lifegroupModel->findById($selectedLifegroupId);
+                if ($existingLg) {
+                    array_unshift($lifegroups, $existingLg);
+                }
+            }
+        } else {
+            // Fallback: if only one lifegroup available, preselect it
+            if (count($lifegroups) === 1 && isset($lifegroups[0]['id'])) {
+                $selectedLifegroupId = (int)$lifegroups[0]['id'];
+            }
+            // As a final fallback, preselect the first available lifegroup to avoid empty selection
+            if ($selectedLifegroupId === 0 && !empty($lifegroups) && isset($lifegroups[0]['id'])) {
+                $selectedLifegroupId = (int)$lifegroups[0]['id'];
+            }
+        }
+
         $this->view('events/lifegroup/edit', [
             'title' => 'Edit Lifegroup Event',
             'event' => $event,
             'churches' => $this->churchModel->getAllChurches(),
-            'lifegroups' => $this->getLifegroupsForCurrentUser(),
+            'lifegroups' => $lifegroups,
+            'selectedLifegroupId' => $selectedLifegroupId,
             'defaultChurchId' => $_SESSION['church_id'] ?? null,
         ]);
     }
@@ -155,6 +188,10 @@ class LifegroupEventController extends Controller
         }
 
         $this->eventModel->update($id, $data);
+
+        // Attendance handling
+        $attendees = isset($_POST['attendees']) && is_array($_POST['attendees']) ? array_map('intval', $_POST['attendees']) : [];
+        $this->attendeeModel->setAttendedUsers('lifegroup', (int)$id, $attendees);
         flash('Lifegroup event updated successfully.', 'success');
         $this->redirect('/events/lifegroup');
     }
@@ -210,6 +247,32 @@ class LifegroupEventController extends Controller
         $newId = $this->eventModel->create($newData);
         flash('Event duplicated for next week.', 'success');
         $this->redirect('/events/lifegroup');
+    }
+
+    // Returns lifegroup members (and attendance state if eventId provided)
+    public function getMembers(int $lifegroupId): void
+    {
+        $this->requireRole(ROLE_MEMBER);
+        $eventId = isset($_GET['eventId']) ? (int)$_GET['eventId'] : null;
+
+        $members = $this->lifegroupModel->getLifegroupMembers($lifegroupId);
+        $attendedUserIds = [];
+        if ($eventId) {
+            $existing = $this->attendeeModel->getAttendeesByEvent('lifegroup', $eventId);
+            foreach ($existing as $row) {
+                $attendedUserIds[(int)$row['user_id']] = true;
+            }
+        }
+
+        $response = [];
+        foreach ($members as $m) {
+            $response[] = [
+                'id' => (int)$m['user_id'],
+                'name' => $m['name'],
+                'checked' => isset($attendedUserIds[(int)$m['user_id']])
+            ];
+        }
+        $this->json(['members' => $response]);
     }
 
     private function getLifegroupsForCurrentUser(): array

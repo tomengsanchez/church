@@ -1,0 +1,36 @@
+<?php
+
+namespace App\Models;
+
+use App\Core\Model;
+
+class EventAttendeeModel extends Model
+{
+    protected string $table = 'event_attendees';
+
+    public function getAttendeesByEvent(string $eventType, int $eventId): array
+    {
+        $sql = "SELECT * FROM {$this->table} WHERE event_type = ? AND event_id = ?";
+        return $this->db->fetchAll($sql, [$eventType, $eventId]);
+    }
+
+    public function setAttendedUsers(string $eventType, int $eventId, array $attendedUserIds): void
+    {
+        // Remove all existing attendees for this event
+        $this->db->query("DELETE FROM {$this->table} WHERE event_type = ? AND event_id = ?", [$eventType, $eventId]);
+
+        if (empty($attendedUserIds)) {
+            return;
+        }
+
+        // Insert attended users
+        foreach ($attendedUserIds as $userId) {
+            $this->db->query(
+                "INSERT INTO {$this->table} (event_type, event_id, user_id, status, created_at, updated_at) VALUES (?, ?, ?, 'attended', NOW(), NOW())",
+                [$eventType, $eventId, (int)$userId]
+            );
+        }
+    }
+}
+
+

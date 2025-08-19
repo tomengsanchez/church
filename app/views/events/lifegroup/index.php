@@ -26,6 +26,7 @@
                                 <th>Date</th>
                                 <th>Time</th>
                                 <th>Location</th>
+                                <th>Lifegroup</th>
                                 <th>Church</th>
                                 <th>Created By</th>
                                 <th>Status</th>
@@ -44,6 +45,7 @@
                                 <td><?= date('M j, Y', strtotime($event['event_date'])) ?></td>
                                 <td><?= $event['event_time'] ? date('g:i A', strtotime($event['event_time'])) : 'TBD' ?></td>
                                 <td><?= htmlspecialchars($event['location'] ?? 'TBD') ?></td>
+                                <td><?= htmlspecialchars($event['lifegroup_name'] ?? 'N/A') ?></td>
                                 <td><?= htmlspecialchars($event['church_name'] ?? 'N/A') ?></td>
                                 <td><?= htmlspecialchars($event['created_by_name'] ?? 'N/A') ?></td>
                                 <td>

@@ -20,7 +20,29 @@
                         </div>
                         <div class="col-md-6 mb-3">
                             <label class="form-label">Time</label>
-                            <input type="time" name="event_time" class="form-control" value="<?= htmlspecialchars($event['event_time']) ?>">
+                            <?php
+                            $timeOptions = [];
+                            for ($h = 1; $h <= 11; $h++) {
+                                $value = sprintf('%02d:00:00', $h);
+                                $label = date('g:i A', strtotime($value));
+                                $timeOptions[] = ['value' => $value, 'label' => $label];
+                            }
+                            // Add 12:00 PM
+                            $timeOptions[] = ['value' => '12:00:00', 'label' => '12:00 PM'];
+                            // Add 1:00 PM to 11:00 PM
+                            for ($h = 13; $h <= 23; $h++) {
+                                $value = sprintf('%02d:00:00', $h);
+                                $label = date('g:i A', strtotime($value));
+                                $timeOptions[] = ['value' => $value, 'label' => $label];
+                            }
+                            $selectedTime = $event['event_time'] ?? '';
+                            ?>
+                            <select name="event_time" class="form-select">
+                                <option value="">Select Time</option>
+                                <?php foreach ($timeOptions as $opt): ?>
+                                    <option value="<?= $opt['value'] ?>" <?= $selectedTime === $opt['value'] ? 'selected' : '' ?>><?= $opt['label'] ?></option>
+                                <?php endforeach; ?>
+                            </select>
                         </div>
                     </div>
                     <div class="mb-3">
@@ -40,10 +62,16 @@
                     <?php if (!empty($lifegroups)): ?>
                     <div class="mb-3">
                         <label class="form-label">Lifegroup</label>
-                        <select name="lifegroup_id" class="form-select">
+                        <select name="lifegroup_id" class="form-select" id="lifegroup-select">
                             <option value="">Select Lifegroup</option>
+                            <?php 
+                                $selectedLifegroupId = $selectedLifegroupId ?? ($event['lifegroup_id'] ?? null);
+                                if (empty($selectedLifegroupId) && !empty($lifegroups) && isset($lifegroups[0]['id'])) {
+                                    $selectedLifegroupId = (int)$lifegroups[0]['id'];
+                                }
+                            ?>
                             <?php foreach ($lifegroups as $lg): ?>
-                                <option value="<?= (int)$lg['id'] ?>" <?= !empty($event['lifegroup_id']) && (int)$lg['id'] === (int)$event['lifegroup_id'] ? 'selected' : '' ?>>
+                                <option value="<?= (int)$lg['id'] ?>" <?= isset($selectedLifegroupId) && (int)$lg['id'] === (int)$selectedLifegroupId ? 'selected' : '' ?>>
                                     <?= htmlspecialchars($lg['name']) ?>
                                 </option>
                             <?php endforeach; ?>
@@ -51,6 +79,11 @@
                         <small class="text-muted">Options are filtered based on your role and assignments.</small>
                     </div>
                     <?php endif; ?>
+                    <div class="mb-3" id="attendance-container" style="display:none;">
+                        <label class="form-label">Attendance</label>
+                        <div id="attendance-list" class="border rounded p-2" style="max-height: 220px; overflow:auto;"></div>
+                        <small class="text-muted">Check members who attended.</small>
+                    </div>
                     <div class="mb-3">
                         <label class="form-label">Description</label>
                         <textarea name="description" class="form-control" rows="4" placeholder="Optional"><?= htmlspecialchars($event['description']) ?></textarea>
@@ -67,4 +100,43 @@
     </div>
 </div>
 
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  const lgSelect = document.getElementById('lifegroup-select');
+  const container = document.getElementById('attendance-container');
+  const list = document.getElementById('attendance-list');
 
+  async function loadMembers(lgId, eventId) {
+    if (!lgId) {
+      container.style.display = 'none';
+      list.innerHTML = '';
+      return;
+    }
+    try {
+      const url = eventId ? `/events/lifegroup/members/${lgId}?eventId=${eventId}` : `/events/lifegroup/members/${lgId}`;
+      const res = await fetch(url);
+      const data = await res.json();
+      list.innerHTML = '';
+      (data.members || []).forEach(m => {
+        const id = `att_${m.id}`;
+        const wrapper = document.createElement('div');
+        wrapper.className = 'form-check';
+        const checked = m.checked ? 'checked' : '';
+        wrapper.innerHTML = `<input class="form-check-input" type="checkbox" name="attendees[]" value="${m.id}" id="${id}" ${checked}>` +
+                            `<label class="form-check-label" for="${id}">${m.name}</label>`;
+        list.appendChild(wrapper);
+      });
+      container.style.display = (data.members || []).length ? 'block' : 'none';
+    } catch (e) {
+      container.style.display = 'none';
+      list.innerHTML = '';
+    }
+  }
+
+  if (lgSelect) {
+    lgSelect.addEventListener('change', (e) => loadMembers(e.target.value, <?= (int)$event['id'] ?>));
+    const preset = lgSelect.value || '';
+    if (preset) loadMembers(preset, <?= (int)$event['id'] ?>);
+  }
+});
+</script>

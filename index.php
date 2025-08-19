@@ -115,6 +115,8 @@ $router->post('/events/lifegroup/edit/{id}', [LifegroupEventController::class, '
 $router->post('/events/lifegroup/delete/{id}', [LifegroupEventController::class, 'delete']);
 $router->get('/events/lifegroup/view/{id}', [LifegroupEventController::class, 'show']);
 $router->post('/events/lifegroup/duplicate/{id}', [LifegroupEventController::class, 'duplicate']);
+// Lifegroup event attendance helper
+$router->get('/events/lifegroup/members/{lifegroupId}', [LifegroupEventController::class, 'getMembers']);
 
 // Error Log routes
 $router->get('/errorlog', [ErrorLogController::class, 'index']);
