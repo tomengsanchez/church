@@ -31,6 +31,16 @@ class EventAttendeeModel extends Model
             );
         }
     }
+
+    public function getAttendeeUsers(string $eventType, int $eventId): array
+    {
+        $sql = "SELECT u.id, u.name, u.email, u.phone
+                FROM {$this->table} ea
+                INNER JOIN users u ON ea.user_id = u.id
+                WHERE ea.event_type = ? AND ea.event_id = ? AND ea.status = 'attended'
+                ORDER BY u.name ASC";
+        return $this->db->fetchAll($sql, [$eventType, $eventId]);
+    }
 }
 
 

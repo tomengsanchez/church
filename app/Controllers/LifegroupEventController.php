@@ -216,9 +216,11 @@ class LifegroupEventController extends Controller
         if (!$event) {
             $this->redirect('/events/lifegroup');
         }
+        $attendees = $this->attendeeModel->getAttendeeUsers('lifegroup', $id);
         $this->view('events/lifegroup/view', [
             'title' => 'Lifegroup Event Details',
             'event' => $event,
+            'attendees' => $attendees,
         ]);
     }
 

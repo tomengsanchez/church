@@ -49,4 +49,39 @@
     </div>
 </div>
 
+<?php if (!empty($attendees)): ?>
+<div class="row mt-3">
+    <div class="col-12 col-lg-8">
+        <div class="card">
+            <div class="card-header">
+                <h6 class="mb-0">Attendance</h6>
+            </div>
+            <div class="card-body">
+                <ul class="list-group list-group-flush">
+                    <?php foreach ($attendees as $a): ?>
+                        <li class="list-group-item d-flex justify-content-between align-items-center">
+                            <div>
+                                <strong><?= htmlspecialchars($a['name']) ?></strong>
+                                <?php if (!empty($a['email'])): ?>
+                                    <br><small class="text-muted"><?= htmlspecialchars($a['email']) ?></small>
+                                <?php endif; ?>
+                            </div>
+                            <?php if (!empty($a['phone'])): ?>
+                                <span class="badge bg-secondary"><?= htmlspecialchars($a['phone']) ?></span>
+                            <?php endif; ?>
+                        </li>
+                    <?php endforeach; ?>
+                </ul>
+            </div>
+        </div>
+    </div>
+    </div>
+<?php else: ?>
+<div class="row mt-3">
+    <div class="col-12 col-lg-8">
+        <div class="alert alert-info mb-0">No attendance recorded yet.</div>
+    </div>
+</div>
+<?php endif; ?>
+
 
