@@ -7,6 +7,13 @@ class LifegroupEventModel extends EventModel
     protected string $table = 'lifegroup_events';
     protected string $eventType = 'lifegroup';
     
+    public function hasColumn(string $columnName): bool
+    {
+        $sql = "SELECT COUNT(*) AS cnt FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = ? AND TABLE_NAME = ? AND COLUMN_NAME = ?";
+        $result = $this->db->fetch($sql, [DB_NAME, $this->table, $columnName]);
+        return (int)($result['cnt'] ?? 0) > 0;
+    }
+    
     public function getAllEvents(): array
     {
         $sql = "SELECT e.*, u.name as created_by_name, c.name as church_name 

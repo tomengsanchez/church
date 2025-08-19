@@ -107,6 +107,14 @@ $router->get('/member/lifegroups-by-mentor/{mentorId}', [MemberController::class
 $router->get('/events/church', [ChurchEventController::class, 'index']);
 $router->get('/events/satelife', [SatelifeEventController::class, 'index']);
 $router->get('/events/lifegroup', [LifegroupEventController::class, 'index']);
+// Lifegroup event CRUD
+$router->get('/events/lifegroup/create', [LifegroupEventController::class, 'create']);
+$router->post('/events/lifegroup/create', [LifegroupEventController::class, 'store']);
+$router->get('/events/lifegroup/edit/{id}', [LifegroupEventController::class, 'edit']);
+$router->post('/events/lifegroup/edit/{id}', [LifegroupEventController::class, 'update']);
+$router->post('/events/lifegroup/delete/{id}', [LifegroupEventController::class, 'delete']);
+$router->get('/events/lifegroup/view/{id}', [LifegroupEventController::class, 'show']);
+$router->post('/events/lifegroup/duplicate/{id}', [LifegroupEventController::class, 'duplicate']);
 
 // Error Log routes
 $router->get('/errorlog', [ErrorLogController::class, 'index']);

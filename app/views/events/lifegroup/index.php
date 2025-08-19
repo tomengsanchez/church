@@ -59,6 +59,11 @@
                                         <a href="/events/lifegroup/edit/<?= $event['id'] ?>" class="btn btn-outline-secondary btn-sm" title="Edit">
                                             <i class="fas fa-edit"></i>
                                         </a>
+                                        <form action="/events/lifegroup/duplicate/<?= $event['id'] ?>" method="post" class="d-inline">
+                                            <button type="submit" class="btn btn-outline-success btn-sm" title="Duplicate for next week">
+                                                <i class="fas fa-copy"></i>
+                                            </button>
+                                        </form>
                                         <button type="button" class="btn btn-outline-danger btn-sm" onclick="deleteEvent(<?= $event['id'] ?>, '<?= htmlspecialchars($event['title'] ?? '') ?>')" title="Delete">
                                             <i class="fas fa-trash"></i>
                                         </button>
@@ -87,8 +92,11 @@
 <script>
 function deleteEvent(id, title) {
     if (confirm(`Are you sure you want to delete "${title}"? This action cannot be undone.`)) {
-        // TODO: Implement delete functionality
-        alert('Delete functionality will be implemented soon!');
+        const form = document.createElement('form');
+        form.method = 'POST';
+        form.action = `/events/lifegroup/delete/${id}`;
+        document.body.appendChild(form);
+        form.submit();
     }
 }
 </script> 
