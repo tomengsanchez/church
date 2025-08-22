@@ -444,24 +444,6 @@ class MemberController extends Controller
         if ($userId) {
             $userRole = $this->getUserRole();
             
-            // Handle coach assignment for coaches and mentors
-            if ($userRole === ROLE_COACH && !empty($_POST['coach_id'])) {
-                $coachId = (int)$_POST['coach_id'];
-                // Ensure the coach is the current user
-                if ($coachId === (int)$_SESSION['user_id']) {
-                    // Create hierarchy relationship for the member to the coach
-                    $this->userModel->createHierarchyRelationship($userId, $coachId);
-                }
-            } elseif ($userRole === ROLE_MENTOR && !empty($_POST['coach_id'])) {
-                $coachId = (int)$_POST['coach_id'];
-                // Ensure the coach is the mentor's parent
-                $currentCoach = $this->userModel->getHierarchyParent($_SESSION['user_id']);
-                if ($currentCoach && $currentCoach['role'] === 'coach' && $coachId === $currentCoach['id']) {
-                    // Create hierarchy relationship for the member to the coach
-                    $this->userModel->createHierarchyRelationship($userId, $coachId);
-                }
-            }
-            
             // Handle mentor assignment (members are assigned to mentors)
             if (!empty($_POST['mentor_id'])) {
                 $mentorId = (int)$_POST['mentor_id'];
@@ -854,6 +836,10 @@ class MemberController extends Controller
                     $this->userModel->updateHierarchyRelationship($mentorId, $coachId);
                 }
             }
+            
+            // IMPORTANT: Remove any direct member-to-coach relationships
+            // Members should only be assigned to mentors, not directly to coaches
+            $this->userModel->removeDirectCoachRelationships($memberId);
             
             // Handle lifegroup assignment
             if (!empty($_POST['lifegroup_id'])) {

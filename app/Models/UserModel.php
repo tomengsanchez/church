@@ -248,6 +248,18 @@ class UserModel extends Model
         return $this->db->fetchAll($sql, [$role, $userId]);
     }
     
+    /**
+     * Remove any direct relationships between a member and coaches
+     * Members should only be assigned to mentors, not directly to coaches
+     */
+    public function removeDirectCoachRelationships(int $memberId): bool
+    {
+        $sql = "DELETE h FROM hierarchy h 
+                INNER JOIN users u ON h.parent_id = u.id 
+                WHERE h.user_id = ? AND u.role = 'coach'";
+        return $this->db->query($sql, [$memberId])->rowCount() >= 0;
+    }
+    
     public function getUsersByChurch(int $churchId): array
     {
         return $this->findAll(['church_id' => $churchId], 'name ASC');
