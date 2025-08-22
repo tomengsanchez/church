@@ -11,7 +11,7 @@
                 <form action="/events/lifegroup/create" method="post">
                     <div class="mb-3">
                         <label class="form-label">Title</label>
-                        <input type="text" name="title" class="form-control" required>
+                        <input type="text" name="title" class="form-control" required value="Weekly Lifegroup">
                     </div>
                     <div class="row">
                         <div class="col-md-6 mb-3">
