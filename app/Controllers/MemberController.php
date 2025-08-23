@@ -96,7 +96,7 @@ class MemberController extends Controller
     
     public function create(): void
     {
-        $this->requireRole([ROLE_MENTOR, ROLE_COACH]);
+        $this->requireRole([ROLE_SUPER_ADMIN, ROLE_PASTOR, ROLE_COACH, ROLE_MENTOR]);
         
         $userRole = $this->getUserRole();
         $churchId = $_SESSION['church_id'] ?? null;
@@ -190,9 +190,11 @@ class MemberController extends Controller
         ]);
     }
     
+
+    
     public function store(): void
     {
-        $this->requireRole([ROLE_MENTOR, ROLE_COACH]);
+        $this->requireRole([ROLE_SUPER_ADMIN, ROLE_PASTOR, ROLE_COACH, ROLE_MENTOR]);
         
         $data = [
             'name' => $_POST['name'] ?? '',
@@ -200,7 +202,7 @@ class MemberController extends Controller
             'password' => $_POST['password'] ?? '',
             'phone' => $_POST['phone'] ?? '',
             'address' => $_POST['address'] ?? '',
-            'church_id' => $_POST['church_id'] ?? null,
+            'church_id' => !empty($_POST['church_id']) ? $_POST['church_id'] : null,
             'status' => $_POST['status'] ?? 'active',
             'role' => 'member'
         ];
@@ -662,7 +664,7 @@ class MemberController extends Controller
             'email' => $_POST['email'] ?? '',
             'phone' => $_POST['phone'] ?? '',
             'address' => $_POST['address'] ?? '',
-            'church_id' => $_POST['church_id'] ?? null,
+            'church_id' => !empty($_POST['church_id']) ? $_POST['church_id'] : null,
             'status' => $_POST['status'] ?? 'active'
         ];
 

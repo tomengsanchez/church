@@ -16,16 +16,21 @@
 		<div class="card mb-4" id="member-statuses">
 			<div class="card-header d-flex justify-content-between align-items-center">
 				<h5 class="mb-0">Member Statuses</h5>
-				<button class="btn btn-primary btn-sm" data-bs-toggle="modal" data-bs-target="#createStatusModal">
-					<i class="fas fa-plus me-1"></i>Add Status
-				</button>
+				<div>
+					<button class="btn btn-secondary btn-sm me-2" onclick="testSave()">
+						<i class="fas fa-test me-1"></i>Test Save
+					</button>
+					<button class="btn btn-primary btn-sm" data-bs-toggle="modal" data-bs-target="#createStatusModal">
+						<i class="fas fa-plus me-1"></i>Add Status
+					</button>
+				</div>
 			</div>
 			<div class="card-body">
 				<div class="table-responsive">
-					<table class="table table-hover align-middle">
+					<table class="table table-hover align-middle" id="statusTable">
 						<thead>
 							<tr>
-								<th>Sort</th>
+								<th style="width: 50px;">Sort</th>
 								<th>Name</th>
 								<th>Slug</th>
 								<th>Active</th>
@@ -33,10 +38,14 @@
 								<th class="text-end">Actions</th>
 							</tr>
 						</thead>
-						<tbody>
+						<tbody id="statusTableBody">
 							<?php foreach ($statuses as $status): ?>
-							<tr>
-								<td><span class="badge bg-light text-dark"><?= (int)$status['sort_order'] ?></span></td>
+							<tr data-id="<?= (int)$status['id'] ?>" class="status-row">
+								<td>
+									<div class="drag-handle" style="cursor: grab; padding: 5px; text-align: center; user-select: none;" draggable="false">
+										<i class="fas fa-grip-vertical text-muted"></i>
+									</div>
+								</td>
 								<td><?= htmlspecialchars($status['name']) ?></td>
 								<td><code><?= htmlspecialchars($status['slug']) ?></code></td>
 								<td>
@@ -153,4 +162,330 @@
 	</div>
 </div>
 
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const tbody = document.getElementById('statusTableBody');
+    let draggedElement = null;
+    let originalOrder = [];
 
+    console.log('Drag and drop script loaded');
+
+    // Initialize sortable
+    function initSortable() {
+        const rows = tbody.querySelectorAll('.status-row');
+        rows.forEach((row, index) => {
+            row.setAttribute('data-sort-order', index + 1);
+        });
+        console.log('Initialized sortable with', rows.length, 'rows');
+    }
+
+    // Save original order
+    function saveOriginalOrder() {
+        originalOrder = Array.from(tbody.querySelectorAll('.status-row')).map(row => ({
+            id: row.getAttribute('data-id'),
+            sort_order: parseInt(row.getAttribute('data-sort-order'))
+        }));
+        console.log('Saved original order:', originalOrder);
+    }
+
+    // Update sort order after drag
+    function updateSortOrder() {
+        const rows = tbody.querySelectorAll('.status-row');
+        rows.forEach((row, index) => {
+            row.setAttribute('data-sort-order', index + 1);
+        });
+    }
+
+    // Send updated order to server
+    function saveNewOrder() {
+        const rows = tbody.querySelectorAll('.status-row');
+        const newOrder = Array.from(rows).map((row, index) => ({
+            id: row.getAttribute('data-id'),
+            sort_order: index + 1
+        }));
+
+        console.log('Saving new order:', newOrder);
+
+        fetch('/settings/status/sort', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ statuses: newOrder })
+        })
+        .then(response => {
+            console.log('Response status:', response.status);
+            return response.json();
+        })
+        .then(data => {
+            console.log('Response data:', data);
+            if (data.success) {
+                // Show success message
+                showNotification('Sort order updated successfully!', 'success');
+            } else {
+                // Revert to original order on error
+                revertToOriginalOrder();
+                showNotification('Failed to update sort order. Please try again.', 'error');
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            revertToOriginalOrder();
+            showNotification('Failed to update sort order. Please try again.', 'error');
+        });
+    }
+
+    // Revert to original order
+    function revertToOriginalOrder() {
+        originalOrder.forEach(item => {
+            const row = tbody.querySelector(`[data-id="${item.id}"]`);
+            if (row) {
+                row.setAttribute('data-sort-order', item.sort_order);
+            }
+        });
+        // Re-sort the table
+        const rows = Array.from(tbody.querySelectorAll('.status-row'));
+        rows.sort((a, b) => {
+            const orderA = parseInt(a.getAttribute('data-sort-order'));
+            const orderB = parseInt(b.getAttribute('data-sort-order'));
+            return orderA - orderB;
+        });
+        rows.forEach(row => tbody.appendChild(row));
+    }
+
+    // Show notification
+    function showNotification(message, type) {
+        const alertClass = type === 'success' ? 'alert-success' : 'alert-danger';
+        const alert = document.createElement('div');
+        alert.className = `alert ${alertClass} alert-dismissible fade show position-fixed`;
+        alert.style.cssText = 'top: 20px; right: 20px; z-index: 9999; min-width: 300px;';
+        alert.innerHTML = `
+            ${message}
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        `;
+        document.body.appendChild(alert);
+        
+        // Auto-remove after 3 seconds
+        setTimeout(() => {
+            if (alert.parentNode) {
+                alert.remove();
+            }
+        }, 3000);
+    }
+
+    // Improved drag and drop implementation
+    let isDragging = false;
+    let dragStartRow = null;
+
+    tbody.addEventListener('mousedown', function(e) {
+        const dragHandle = e.target.closest('.drag-handle');
+        if (dragHandle) {
+            console.log('Mouse down on drag handle');
+            const row = dragHandle.closest('.status-row');
+            if (row) {
+                dragStartRow = row;
+                row.draggable = true;
+                console.log('Set row as draggable:', row.getAttribute('data-id'));
+            }
+        }
+    });
+
+    tbody.addEventListener('dragstart', function(e) {
+        console.log('Drag start event triggered');
+        
+        // Use the stored drag start row if available
+        if (dragStartRow) {
+            console.log('Using stored drag start row:', dragStartRow.getAttribute('data-id'));
+            draggedElement = dragStartRow;
+            e.dataTransfer.effectAllowed = 'move';
+            e.dataTransfer.setData('text/html', draggedElement.outerHTML);
+            draggedElement.style.opacity = '0.5';
+            draggedElement.classList.add('dragging');
+            isDragging = true;
+            saveOriginalOrder();
+        } else {
+            // Fallback to finding the drag handle
+            const dragHandle = e.target.closest('.drag-handle');
+            if (dragHandle) {
+                console.log('Drag handle found, starting drag');
+                draggedElement = dragHandle.closest('.status-row');
+                e.dataTransfer.effectAllowed = 'move';
+                e.dataTransfer.setData('text/html', draggedElement.outerHTML);
+                draggedElement.style.opacity = '0.5';
+                draggedElement.classList.add('dragging');
+                isDragging = true;
+                saveOriginalOrder();
+            } else {
+                console.log('No drag handle found');
+            }
+        }
+    });
+
+    tbody.addEventListener('dragend', function(e) {
+        console.log('Drag end event');
+        if (draggedElement) {
+            draggedElement.style.opacity = '';
+            draggedElement.classList.remove('dragging');
+            draggedElement = null;
+        }
+        isDragging = false;
+        dragStartRow = null;
+    });
+
+    tbody.addEventListener('dragover', function(e) {
+        e.preventDefault();
+        e.dataTransfer.dropEffect = 'move';
+        
+        if (!isDragging || !draggedElement) {
+            return;
+        }
+        
+        const targetRow = e.target.closest('.status-row');
+        if (targetRow && targetRow !== draggedElement) {
+            const rect = targetRow.getBoundingClientRect();
+            const midpoint = rect.top + rect.height / 2;
+            
+            // Remove existing drop indicators
+            tbody.querySelectorAll('.status-row').forEach(row => {
+                row.classList.remove('drop-above', 'drop-below');
+            });
+            
+            if (e.clientY < midpoint) {
+                targetRow.classList.add('drop-above');
+            } else {
+                targetRow.classList.add('drop-below');
+            }
+        }
+    });
+
+    tbody.addEventListener('dragleave', function(e) {
+        if (!e.target.closest('.status-row')) {
+            tbody.querySelectorAll('.status-row').forEach(row => {
+                row.classList.remove('drop-above', 'drop-below');
+            });
+        }
+    });
+
+    tbody.addEventListener('drop', function(e) {
+        e.preventDefault();
+        console.log('Drop event triggered');
+        
+        if (!isDragging || !draggedElement) {
+            console.log('No active drag operation');
+            return;
+        }
+        
+        const targetRow = e.target.closest('.status-row');
+        if (targetRow && targetRow !== draggedElement) {
+            console.log('Valid drop target found');
+            const rect = targetRow.getBoundingClientRect();
+            const midpoint = rect.top + rect.height / 2;
+            
+            if (e.clientY < midpoint) {
+                // Insert before target
+                targetRow.parentNode.insertBefore(draggedElement, targetRow);
+                console.log('Inserted before target');
+            } else {
+                // Insert after target
+                targetRow.parentNode.insertBefore(draggedElement, targetRow.nextSibling);
+                console.log('Inserted after target');
+            }
+            
+            updateSortOrder();
+            saveNewOrder();
+        } else {
+            console.log('Invalid drop target or no dragged element');
+        }
+        
+        // Remove drop indicators
+        tbody.querySelectorAll('.status-row').forEach(row => {
+            row.classList.remove('drop-above', 'drop-below');
+        });
+    });
+
+    // Make rows draggable and add explicit drag handle listeners
+    tbody.querySelectorAll('.status-row').forEach(row => {
+        row.draggable = true;
+        console.log('Made row draggable:', row.getAttribute('data-id'));
+        
+        // Add explicit drag handle listener
+        const dragHandle = row.querySelector('.drag-handle');
+        if (dragHandle) {
+            dragHandle.addEventListener('mousedown', function(e) {
+                e.preventDefault();
+                e.stopPropagation();
+                console.log('Drag handle mousedown for row:', row.getAttribute('data-id'));
+                dragStartRow = row;
+                row.draggable = true;
+            });
+            
+            dragHandle.addEventListener('click', function(e) {
+                e.preventDefault();
+                e.stopPropagation();
+            });
+        }
+    });
+
+    // Initialize
+    initSortable();
+});
+
+// Test function to manually trigger save
+function testSave() {
+    console.log('Test save function called');
+    const tbody = document.getElementById('statusTableBody');
+    const rows = tbody.querySelectorAll('.status-row');
+    const newOrder = Array.from(rows).map((row, index) => ({
+        id: row.getAttribute('data-id'),
+        sort_order: index + 1
+    }));
+
+    console.log('Test order:', newOrder);
+
+    fetch('/settings/status/sort', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ statuses: newOrder })
+    })
+    .then(response => {
+        console.log('Test response status:', response.status);
+        return response.json();
+    })
+    .then(data => {
+        console.log('Test response data:', data);
+        alert('Test save result: ' + JSON.stringify(data));
+    })
+    .catch(error => {
+        console.error('Test error:', error);
+        alert('Test save error: ' + error.message);
+    });
+}
+</script>
+
+<style>
+.status-row {
+    transition: all 0.2s ease;
+}
+
+.status-row.drop-above {
+    border-top: 3px solid var(--primary-purple);
+}
+
+.status-row.drop-below {
+    border-bottom: 3px solid var(--primary-purple);
+}
+
+.drag-handle:hover {
+    color: var(--primary-purple) !important;
+}
+
+.status-row:active {
+    cursor: grabbing;
+}
+
+.status-row.dragging {
+    opacity: 0.5;
+}
+</style>

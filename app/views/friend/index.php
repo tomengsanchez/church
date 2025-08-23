@@ -4,33 +4,77 @@
     <div class="col-12">
         <div class="d-flex justify-content-between align-items-center mb-4">
             <h1 class="mb-0">
-                <i class="fas fa-users me-2"></i>Members
+                <i class="fas fa-user-plus me-2"></i>New Friends
             </h1>
             <div>
-                <a href="/member/create" class="btn btn-primary">
-                    <i class="fas fa-plus me-2"></i>Add Member
+                <a href="/friend/create" class="btn btn-warning">
+                    <i class="fas fa-plus me-2"></i>Add New Friend
                 </a>
             </div>
         </div>
     </div>
 </div>
 
-
+<!-- Stats Cards -->
+<div class="row mb-4">
+    <div class="col-md-4">
+        <div class="card bg-warning text-dark">
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <h4 class="mb-0"><?= $stats['total'] ?? 0 ?></h4>
+                        <p class="mb-0">Total Friends</p>
+                    </div>
+                    <div class="align-self-center">
+                        <i class="fas fa-users fa-2x"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card bg-success text-white">
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <h4 class="mb-0"><?= $stats['assigned'] ?? 0 ?></h4>
+                        <p class="mb-0">Assigned</p>
+                    </div>
+                    <div class="align-self-center">
+                        <i class="fas fa-check-circle fa-2x"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card bg-info text-white">
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <h4 class="mb-0"><?= $stats['unassigned'] ?? 0 ?></h4>
+                        <p class="mb-0">Unassigned</p>
+                    </div>
+                    <div class="align-self-center">
+                        <i class="fas fa-clock fa-2x"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
 
 <!-- Filter Section -->
 <div class="row mb-4">
     <div class="col-12">
         <div class="card">
             <div class="card-body">
-                <form method="GET" action="/member" class="row g-3">
+                <form method="GET" action="/friend" class="row g-3">
                     <div class="col-md-3">
                         <label for="status_filter" class="form-label">Status</label>
                         <select class="form-select" id="status_filter" name="status">
                             <option value="">All Status</option>
-                            <option value="active" <?= ($_GET['status'] ?? '') === 'active' ? 'selected' : '' ?>>Active</option>
-                            <option value="inactive" <?= ($_GET['status'] ?? '') === 'inactive' ? 'selected' : '' ?>>Inactive</option>
                             <option value="pending" <?= ($_GET['status'] ?? '') === 'pending' ? 'selected' : '' ?>>Pending</option>
-                            <option value="suspended" <?= ($_GET['status'] ?? '') === 'suspended' ? 'selected' : '' ?>>Suspended</option>
                         </select>
                     </div>
                     <div class="col-md-3">
@@ -53,7 +97,7 @@
                         <button type="submit" class="btn btn-outline-primary me-2">
                             <i class="fas fa-search me-1"></i>Filter
                         </button>
-                        <a href="/member" class="btn btn-outline-secondary">
+                        <a href="/friend" class="btn btn-outline-secondary">
                             <i class="fas fa-times me-1"></i>Clear
                         </a>
                     </div>
@@ -63,62 +107,71 @@
     </div>
 </div>
 
-<!-- Members Table -->
+<!-- Friends Table -->
 <div class="row">
     <div class="col-12">
         <div class="card">
             <div class="card-body">
-                <?php if (!empty($members)): ?>
+                <?php if (!empty($friends)): ?>
                 <div class="table-responsive">
                     <table class="table table-striped table-hover">
                         <thead>
                             <tr>
                                 <th>Name</th>
-                                <th>Email</th>
+                                <th>Contact</th>
                                 <th>Church</th>
                                 <th>Pastor</th>
                                 <th>Coach</th>
                                 <th>Mentor</th>
                                 <th>Lifegroup</th>
                                 <th>Status</th>
-                                <th>Joined</th>
+                                <th>Added</th>
                                 <th>Actions</th>
                             </tr>
                         </thead>
                         <tbody>
-                            <?php foreach ($members as $member): ?>
-                            <tr>
+                            <?php foreach ($friends as $friend): ?>
+                            <tr class="table-warning">
                                 <td>
-                                    <strong><?= htmlspecialchars($member['name'] ?? '') ?></strong>
+                                    <strong><?= htmlspecialchars($friend['name'] ?? '') ?></strong>
+                                    <span class="badge bg-warning text-dark ms-2">New Friend</span>
                                 </td>
                                 <td>
                                     <?php 
-                                    $email = $member['email'] ?? '';
+                                    $email = $friend['email'] ?? '';
+                                    $phone = $friend['phone'] ?? '';
                                     if (strpos($email, 'no-email-') === 0 && strpos($email, '@placeholder.local') !== false) {
                                         echo '<span class="text-muted">No Email</span>';
                                     } else {
                                         echo htmlspecialchars($email);
                                     }
+                                    if (!empty($phone)) {
+                                        echo '<br><small class="text-muted">' . htmlspecialchars($phone) . '</small>';
+                                    }
                                     ?>
                                 </td>
-                                <td><?= htmlspecialchars($member['church_name'] ?? 'Not Assigned') ?></td>
-                                <td><?= htmlspecialchars($member['pastor_name'] ?? 'Not Assigned') ?></td>
-                                <td><?= htmlspecialchars($member['coach_name'] ?? 'Not Assigned') ?></td>
-                                <td><?= htmlspecialchars($member['mentor_name'] ?? 'Not Assigned') ?></td>
-                                <td><?= htmlspecialchars($member['lifegroup_name'] ?? 'Not Assigned') ?></td>
+                                <td><?= htmlspecialchars($friend['church_name'] ?? 'Not Assigned') ?></td>
+                                <td><?= htmlspecialchars($friend['pastor_name'] ?? 'Not Assigned') ?></td>
+                                <td><?= htmlspecialchars($friend['coach_name'] ?? 'Not Assigned') ?></td>
+                                <td><?= htmlspecialchars($friend['mentor_name'] ?? 'Not Assigned') ?></td>
+                                <td><?= htmlspecialchars($friend['lifegroup_name'] ?? 'Not Assigned') ?></td>
                                 <td>
-                                    <span class="badge bg-<?= getStatusBadgeClass($member['status']) ?>">
-                                        <?= ucfirst($member['status']) ?>
+                                    <span class="badge bg-warning text-dark">
+                                        <?= ucfirst($friend['status']) ?>
                                     </span>
                                 </td>
-                                <td><?= date('M j, Y', strtotime($member['created_at'])) ?></td>
+                                <td><?= date('M j, Y', strtotime($friend['created_at'])) ?></td>
                                 <td>
                                     <div class="btn-group" role="group">
-                                        <a href="/member/edit/<?= $member['id'] ?>" class="btn btn-outline-primary btn-sm" title="Edit">
+                                        <a href="/friend/edit/<?= $friend['id'] ?>" class="btn btn-outline-warning btn-sm" title="Edit">
                                             <i class="fas fa-edit"></i>
                                         </a>
+                                        <button type="button" class="btn btn-outline-success btn-sm" 
+                                                onclick="promoteFriend(<?= $friend['id'] ?>, '<?= htmlspecialchars($friend['name'] ?? '') ?>')" title="Promote to Member">
+                                            <i class="fas fa-arrow-up"></i>
+                                        </button>
                                         <button type="button" class="btn btn-outline-danger btn-sm" 
-                                                onclick="deleteMember(<?= $member['id'] ?>, '<?= htmlspecialchars($member['name'] ?? '') ?>')" title="Delete">
+                                                onclick="deleteFriend(<?= $friend['id'] ?>, '<?= htmlspecialchars($friend['name'] ?? '') ?>')" title="Delete">
                                             <i class="fas fa-trash"></i>
                                         </button>
                                     </div>
@@ -129,38 +182,13 @@
                     </table>
                 </div>
                 
-                <!-- Pagination -->
-                <?php if (isset($pagination) && $pagination['total_pages'] > 1): ?>
-                <nav aria-label="Member pagination" class="mt-4">
-                    <ul class="pagination justify-content-center">
-                        <?php if ($pagination['current_page'] > 1): ?>
-                        <li class="page-item">
-                            <a class="page-link" href="?page=<?= $pagination['current_page'] - 1 ?>&status=<?= $_GET['status'] ?? '' ?>&church_id=<?= $_GET['church_id'] ?? '' ?>&search=<?= $_GET['search'] ?? '' ?>">Previous</a>
-                        </li>
-                        <?php endif; ?>
-                        
-                        <?php for ($i = 1; $i <= $pagination['total_pages']; $i++): ?>
-                        <li class="page-item <?= $i == $pagination['current_page'] ? 'active' : '' ?>">
-                            <a class="page-link" href="?page=<?= $i ?>&status=<?= $_GET['status'] ?? '' ?>&church_id=<?= $_GET['church_id'] ?? '' ?>&search=<?= $_GET['search'] ?? '' ?>"><?= $i ?></a>
-                        </li>
-                        <?php endfor; ?>
-                        
-                        <?php if ($pagination['current_page'] < $pagination['total_pages']): ?>
-                        <li class="page-item">
-                            <a class="page-link" href="?page=<?= $pagination['current_page'] + 1 ?>&status=<?= $_GET['status'] ?? '' ?>&church_id=<?= $_GET['church_id'] ?? '' ?>&search=<?= $_GET['search'] ?? '' ?>">Next</a>
-                        </li>
-                        <?php endif; ?>
-                    </ul>
-                </nav>
-                <?php endif; ?>
-                
                 <?php else: ?>
                 <div class="text-center py-5">
-                    <i class="fas fa-users fa-3x text-muted mb-3"></i>
-                    <h4 class="text-muted">No Members Found</h4>
-                    <p class="text-muted">Start by adding your first member.</p>
-                    <a href="/member/create" class="btn btn-primary">
-                        <i class="fas fa-plus me-2"></i>Add Member
+                    <i class="fas fa-user-plus fa-3x text-muted mb-3"></i>
+                    <h4 class="text-muted">No New Friends Found</h4>
+                    <p class="text-muted">Start by adding your first new friend.</p>
+                    <a href="/friend/create" class="btn btn-warning">
+                        <i class="fas fa-plus me-2"></i>Add New Friend
                     </a>
                 </div>
                 <?php endif; ?>
@@ -170,13 +198,19 @@
 </div>
 
 <script>
-function deleteMember(id, name) {
+function deleteFriend(id, name) {
     if (confirm(`Are you sure you want to delete "${name}"? This action cannot be undone.`)) {
         const form = document.createElement('form');
         form.method = 'POST';
-        form.action = `/member/delete/${id}`;
+        form.action = `/friend/delete/${id}`;
         document.body.appendChild(form);
         form.submit();
+    }
+}
+
+function promoteFriend(id, name) {
+    if (confirm(`Are you sure you want to promote "${name}" to active member? You will need to assign Church, Pastor, and Coach.`)) {
+        window.location.href = `/friend/promote/${id}`;
     }
 }
 </script>

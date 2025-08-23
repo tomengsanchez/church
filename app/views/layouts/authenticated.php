@@ -74,9 +74,20 @@
                                     <i class="fas fa-users me-2"></i>Lifegroups
                                 </a>
                             </li>
+                            <?php endif; ?>
+                            
+                            <?php if (hasPermission(ROLE_SUPER_ADMIN) || hasPermission(ROLE_MENTOR)): ?>
                             <li>
                                 <a class="dropdown-item" href="/member">
                                     <i class="fas fa-user me-2"></i>Members
+                                </a>
+                            </li>
+                            <?php endif; ?>
+                            
+                            <?php if (hasPermission(ROLE_SUPER_ADMIN)): ?>
+                            <li>
+                                <a class="dropdown-item" href="/friend">
+                                    <i class="fas fa-user-plus me-2"></i>New Friend
                                 </a>
                             </li>
                             <?php endif; ?>
@@ -120,25 +131,7 @@
                 </ul>
                 
                 <ul class="navbar-nav ms-auto">
-                    <li class="nav-item dropdown">
-                        <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button" data-bs-toggle="dropdown">
-                            <i class="fas fa-user-circle me-1"></i><?= $_SESSION['user_name'] ?>
-                        </a>
-                        <ul class="dropdown-menu shadow-sm">
-                            <li>
-                                <a class="dropdown-item" href="/auth/profile">
-                                    <i class="fas fa-user-edit me-2"></i>Profile
-                                </a>
-                            </li>
-                            <li><hr class="dropdown-divider"></li>
-                            <li>
-                                <a class="dropdown-item" href="/auth/logout">
-                                    <i class="fas fa-sign-out-alt me-2"></i>Logout
-                                </a>
-                            </li>
-                        </ul>
-                    </li>
-                    <?php if (hasPermission(ROLE_SUPER_ADMIN)): ?>
+                <?php if (hasPermission(ROLE_SUPER_ADMIN)): ?>
                     <li class="nav-item dropdown">
                         <a class="nav-link dropdown-toggle" href="#" id="systemDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
                             <i class="fas fa-gear me-1"></i>System Settings
@@ -158,6 +151,25 @@
                         </ul>
                     </li>
                     <?php endif; ?>
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button" data-bs-toggle="dropdown">
+                            <i class="fas fa-user-circle me-1"></i><?= $_SESSION['user_name'] ?>
+                        </a>
+                        <ul class="dropdown-menu shadow-sm">
+                            <li>
+                                <a class="dropdown-item" href="/auth/profile">
+                                    <i class="fas fa-user-edit me-2"></i>Profile
+                                </a>
+                            </li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li>
+                                <a class="dropdown-item" href="/auth/logout">
+                                    <i class="fas fa-sign-out-alt me-2"></i>Logout
+                                </a>
+                            </li>
+                        </ul>
+                    </li>
+                    
                 </ul>
             </div>
         </div>

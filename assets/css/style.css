@@ -15,6 +15,14 @@ body {
     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
     background-color: var(--light-gray);
     color: var(--charcoal);
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+}
+
+main {
+    flex: 1;
+    padding-bottom: 2rem;
 }
 
 .navbar-brand {
@@ -96,6 +104,35 @@ body {
 .table-striped > tbody > tr:nth-of-type(even) > td,
 .table-striped > tbody > tr:nth-of-type(even) > th {
     background-color: rgba(0, 0, 0, 0.05);
+}
+
+/* New Friend Feature Styles */
+.table-warning {
+    background-color: rgba(255, 193, 7, 0.1) !important;
+}
+
+.table-warning:hover {
+    background-color: rgba(255, 193, 7, 0.2) !important;
+}
+
+.border-warning {
+    border-color: #ffc107 !important;
+}
+
+
+
+/* Pending Members Section */
+.card.border-warning .card-header {
+    background-color: #ffc107 !important;
+    color: #000 !important;
+    font-weight: 600;
+}
+
+.table-sm.table-warning thead th {
+    background-color: #ffc107 !important;
+    color: #000 !important;
+    font-weight: 600;
+    border-color: #e0a800 !important;
 }
 
 .btn {
@@ -252,6 +289,35 @@ footer {
     margin-top: auto;
     background-color: var(--dark-purple);
     color: var(--white);
+    position: relative;
+    z-index: 1;
+    clear: both;
+}
+
+/* Ensure proper spacing for forms */
+.container-fluid {
+    min-height: calc(100vh - 200px);
+    padding-bottom: 2rem;
+}
+
+/* Card spacing for forms */
+.card {
+    margin-bottom: 2rem;
+}
+
+/* Form specific spacing */
+.form-container {
+    padding-bottom: 3rem;
+}
+
+/* Promotion form specific spacing */
+.promote-form {
+    margin-bottom: 4rem;
+}
+
+/* Ensure buttons don't get cut off */
+.btn-group, .d-flex.justify-content-between {
+    margin-bottom: 2rem;
 }
 
 /* Text Colors */
@@ -389,4 +455,36 @@ body .table > thead > tr > th {
     font-weight: bold !important;
     border-bottom: 2px solid #4b2c6c !important;
     border-color: #4b2c6c !important;
+}
+
+/* Drag and Drop Styles */
+.status-row {
+    transition: all 0.2s ease;
+}
+
+.status-row.drop-above {
+    border-top: 3px solid var(--primary-purple);
+}
+
+.status-row.drop-below {
+    border-bottom: 3px solid var(--primary-purple);
+}
+
+.drag-handle {
+    cursor: grab;
+    padding: 5px;
+    text-align: center;
+    transition: color 0.2s ease;
+}
+
+.drag-handle:hover {
+    color: var(--primary-purple) !important;
+}
+
+.status-row:active {
+    cursor: grabbing;
+}
+
+.status-row.dragging {
+    opacity: 0.5;
 } 

@@ -110,6 +110,39 @@ class SettingsController extends Controller
 
         $this->redirect('/settings');
     }
+
+    public function updateSortOrder(): void
+    {
+        $this->requireRole([ROLE_SUPER_ADMIN]);
+
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+            http_response_code(405);
+            echo json_encode(['error' => 'Method not allowed']);
+            return;
+        }
+
+        $input = json_decode(file_get_contents('php://input'), true);
+        
+        if (!isset($input['statuses']) || !is_array($input['statuses'])) {
+            http_response_code(400);
+            echo json_encode(['error' => 'Invalid data']);
+            return;
+        }
+
+        $statuses = $input['statuses'];
+        
+        // Log the received data
+        error_log("Received sort order update request: " . json_encode($statuses));
+        
+        $success = $this->memberStatusModel->updateSortOrders($statuses);
+
+        if ($success) {
+            echo json_encode(['success' => true, 'message' => 'Sort order updated successfully']);
+        } else {
+            http_response_code(500);
+            echo json_encode(['error' => 'Failed to update sort order']);
+        }
+    }
 }
 
 

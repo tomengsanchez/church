@@ -125,7 +125,7 @@ class UserModel extends Model
     
     public function getMentorsWithChurchesAndPastors(): array
     {
-        $sql = "SELECT u.*, c.name as church_name, p.name as pastor_name, co.name as coach_name 
+        $sql = "SELECT u.*, c.name as church_name, p.name as pastor_name, co.name as coach_name, co.id as coach_id 
                 FROM {$this->table} u 
                 LEFT JOIN churches c ON u.church_id = c.id 
                 LEFT JOIN users p ON c.pastor_id = p.id 
@@ -138,7 +138,7 @@ class UserModel extends Model
     
     public function getMentorsWithChurchesAndPastorsByChurch(int $churchId): array
     {
-        $sql = "SELECT u.*, c.name as church_name, p.name as pastor_name, co.name as coach_name 
+        $sql = "SELECT u.*, c.name as church_name, p.name as pastor_name, co.name as coach_name, co.id as coach_id 
                 FROM {$this->table} u 
                 LEFT JOIN churches c ON u.church_id = c.id 
                 LEFT JOIN users p ON c.pastor_id = p.id 
@@ -263,5 +263,85 @@ class UserModel extends Model
     public function getUsersByChurch(int $churchId): array
     {
         return $this->findAll(['church_id' => $churchId], 'name ASC');
+    }
+    
+    public function getUsersByRoleAndChurch(string $role, int $churchId): array
+    {
+        return $this->findAll(['role' => $role, 'church_id' => $churchId], 'name ASC');
+    }
+    
+    // Friend-specific methods
+    public function getFriendsByStatus(string $status): array
+    {
+        $sql = "SELECT u.*, c.name as church_name 
+                FROM {$this->table} u 
+                LEFT JOIN churches c ON u.church_id = c.id 
+                WHERE u.role = 'member' AND u.status = ? 
+                ORDER BY u.created_at DESC";
+        return $this->db->fetchAll($sql, [$status]);
+    }
+    
+    public function getFriendsByPastor(int $pastorId): array
+    {
+        $sql = "SELECT u.*, c.name as church_name 
+                FROM {$this->table} u 
+                LEFT JOIN churches c ON u.church_id = c.id 
+                WHERE u.role = 'member' AND u.status = 'pending' AND c.pastor_id = ? 
+                ORDER BY u.created_at DESC";
+        return $this->db->fetchAll($sql, [$pastorId]);
+    }
+    
+    public function getFriendsByCoach(int $coachId): array
+    {
+        $sql = "SELECT u.*, c.name as church_name 
+                FROM {$this->table} u 
+                LEFT JOIN churches c ON u.church_id = c.id 
+                LEFT JOIN hierarchy h ON u.id = h.user_id 
+                LEFT JOIN users mentor ON h.parent_id = mentor.id 
+                LEFT JOIN hierarchy h2 ON mentor.id = h2.user_id 
+                WHERE u.role = 'member' AND u.status = 'pending' AND h2.parent_id = ? 
+                ORDER BY u.created_at DESC";
+        return $this->db->fetchAll($sql, [$coachId]);
+    }
+    
+    public function getFriendsByMentor(int $mentorId): array
+    {
+        $sql = "SELECT u.*, c.name as church_name 
+                FROM {$this->table} u 
+                LEFT JOIN churches c ON u.church_id = c.id 
+                LEFT JOIN hierarchy h ON u.id = h.user_id 
+                WHERE u.role = 'member' AND u.status = 'pending' AND h.parent_id = ? 
+                ORDER BY u.created_at DESC";
+        return $this->db->fetchAll($sql, [$mentorId]);
+    }
+    
+    public function countFriendsByStatus(string $status, ?int $churchId = null): int
+    {
+        $sql = "SELECT COUNT(*) as count FROM {$this->table} WHERE role = 'member' AND status = ?";
+        $params = [$status];
+        
+        if ($churchId) {
+            $sql .= " AND church_id = ?";
+            $params[] = $churchId;
+        }
+        
+        $result = $this->db->fetch($sql, $params);
+        return $result['count'] ?? 0;
+    }
+    
+    public function countAssignedFriends(?int $churchId = null): int
+    {
+        $sql = "SELECT COUNT(*) as count FROM {$this->table} u 
+                INNER JOIN hierarchy h ON u.id = h.user_id 
+                WHERE u.role = 'member' AND u.status = 'pending'";
+        $params = [];
+        
+        if ($churchId) {
+            $sql .= " AND u.church_id = ?";
+            $params[] = $churchId;
+        }
+        
+        $result = $this->db->fetch($sql, $params);
+        return $result['count'] ?? 0;
     }
 } 

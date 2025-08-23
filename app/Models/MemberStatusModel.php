@@ -70,6 +70,33 @@ class MemberStatusModel extends Model
         }
         return (bool)$this->db->fetch($sql, $params);
     }
+
+    public function updateSortOrders(array $statuses): bool
+    {
+        try {
+            $this->db->beginTransaction();
+            
+            foreach ($statuses as $index => $status) {
+                if (!isset($status['id']) || !isset($status['sort_order'])) {
+                    continue;
+                }
+                
+                $sql = "UPDATE {$this->table} SET sort_order = ? WHERE id = ?";
+                $result = $this->db->query($sql, [(int)$status['sort_order'], (int)$status['id']]);
+                
+                if ($result === false) {
+                    throw new \Exception("Failed to update sort order for status ID: " . $status['id']);
+                }
+            }
+            
+            $this->db->commit();
+            return true;
+        } catch (\Exception $e) {
+            $this->db->rollback();
+            error_log("Error updating sort orders: " . $e->getMessage());
+            return false;
+        }
+    }
 }
 
 

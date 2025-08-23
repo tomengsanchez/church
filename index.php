@@ -22,6 +22,7 @@ use App\Controllers\SatelifeEventController;
 use App\Controllers\LifegroupEventController;
 use App\Controllers\LifegroupController;
 use App\Controllers\SettingsController;
+use App\Controllers\FriendController;
 
 // Initialize database connection
 Database::getInstance();
@@ -94,6 +95,15 @@ $router->get('/lifegroup/mentors/{churchId}', [LifegroupController::class, 'getM
 $router->get('/member', [MemberController::class, 'index']);
 $router->get('/member/create', [MemberController::class, 'create']);
 $router->post('/member/create', [MemberController::class, 'store']);
+// Friend routes
+$router->get('/friend', [FriendController::class, 'index']);
+$router->get('/friend/create', [FriendController::class, 'create']);
+$router->post('/friend', [FriendController::class, 'store']);
+$router->get('/friend/edit/{id}', [FriendController::class, 'edit']);
+$router->post('/friend/edit/{id}', [FriendController::class, 'update']);
+$router->post('/friend/delete/{id}', [FriendController::class, 'delete']);
+$router->get('/friend/promote/{id}', [FriendController::class, 'promote']);
+$router->post('/friend/promote/{id}', [FriendController::class, 'processPromotion']);
 $router->get('/member/edit/{id}', [MemberController::class, 'edit']);
 $router->post('/member/edit/{id}', [MemberController::class, 'update']);
 $router->post('/member/delete/{id}', [MemberController::class, 'delete']);
@@ -132,6 +142,7 @@ $router->get('/settings', [SettingsController::class, 'index']);
 $router->post('/settings/status/create', [SettingsController::class, 'createStatus']);
 $router->post('/settings/status/edit/{id}', [SettingsController::class, 'editStatus']);
 $router->post('/settings/status/delete/{id}', [SettingsController::class, 'deleteStatus']);
+$router->post('/settings/status/sort', [SettingsController::class, 'updateSortOrder']);
 
 // Test route for demonstrating error logging
 $router->get('/test-logs', function() {

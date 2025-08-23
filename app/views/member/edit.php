@@ -11,6 +11,13 @@
                 </h4>
             </div>
             <div class="card-body">
+                <?php if ($member['status'] === 'pending'): ?>
+                <div class="alert alert-warning">
+                    <i class="fas fa-exclamation-triangle me-2"></i>
+                    <strong>Pending Friend:</strong> This member is currently pending. Please assign them to a church, coach, and mentor, then change their status to "Active" to complete their profile.
+                </div>
+                <?php endif; ?>
+                
                 <form method="POST" action="/member/edit/<?= $member['id'] ?>">
                     <div class="row">
                         <div class="col-md-6 mb-3">
