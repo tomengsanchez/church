@@ -45,6 +45,9 @@ $router->post('/auth/profile', [AuthController::class, 'profile']);
 
 // Dashboard routes
 $router->get('/dashboard', [DashboardController::class, 'index']);
+$router->post('/dashboard/getCoachHierarchy', [DashboardController::class, 'getCoachHierarchy']);
+$router->post('/dashboard/getMentorHierarchy', [DashboardController::class, 'getMentorHierarchy']);
+$router->post('/dashboard/getLifegroupsHierarchy', [DashboardController::class, 'getLifegroupsHierarchy']);
 
 // Church routes
 $router->get('/church', [ChurchController::class, 'index']);
@@ -158,6 +161,11 @@ $router->get('/test-logs', function() {
     echo '<p>Check the error logs section to see the test entries.</p>';
     echo '<p><a href="/errorlog">View Error Logs</a></p>';
     echo '<p><a href="/">Go Home</a></p>';
+});
+
+// Test route for pastor dashboard functionality
+$router->get('/test-pastor-dashboard', function() {
+    include __DIR__ . '/test_pastor_dashboard.php';
 });
 
 // Dispatch the request
