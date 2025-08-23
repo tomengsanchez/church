@@ -34,12 +34,23 @@ class EventAttendeeModel extends Model
 
     public function getAttendeeUsers(string $eventType, int $eventId): array
     {
-        $sql = "SELECT u.id, u.name, u.email, u.phone
+        $sql = "SELECT u.id, u.name, u.email, u.phone,
+                       mentor.name as mentor_name,
+                       coach.name as coach_name
                 FROM {$this->table} ea
                 INNER JOIN users u ON ea.user_id = u.id
+                LEFT JOIN hierarchy h ON u.id = h.user_id
+                LEFT JOIN users mentor ON h.parent_id = mentor.id AND mentor.role = 'mentor'
+                LEFT JOIN hierarchy h2 ON mentor.id = h2.user_id
+                LEFT JOIN users coach ON h2.parent_id = coach.id AND coach.role = 'coach'
                 WHERE ea.event_type = ? AND ea.event_id = ? AND ea.status = 'attended'
                 ORDER BY u.name ASC";
         return $this->db->fetchAll($sql, [$eventType, $eventId]);
+    }
+
+    public function deleteByEvent(string $eventType, int $eventId): void
+    {
+        $this->db->query("DELETE FROM {$this->table} WHERE event_type = ? AND event_id = ?", [$eventType, $eventId]);
     }
 }
 

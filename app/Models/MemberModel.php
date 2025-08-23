@@ -140,6 +140,80 @@ class MemberModel extends Model
         return $this->db->fetchAll($sql, $params);
     }
 
+    public function searchMembersByChurch(string $search, int $churchId): array
+    {
+        return $this->searchMembers($search, $churchId);
+    }
+
+    public function searchMembersByCoach(string $search, int $coachId): array
+    {
+        $sql = "SELECT u.*, 
+                ch.name as church_name,
+                p.name as pastor_name,
+                c.name as coach_name,
+                m.name as mentor_name,
+                l.name as lifegroup_name
+                FROM {$this->table} u 
+                LEFT JOIN churches ch ON u.church_id = ch.id
+                LEFT JOIN users p ON ch.pastor_id = p.id
+                LEFT JOIN hierarchy h1 ON u.id = h1.user_id
+                LEFT JOIN users m ON h1.parent_id = m.id AND m.role = 'mentor'
+                LEFT JOIN hierarchy h2 ON m.id = h2.user_id
+                LEFT JOIN users c ON h2.parent_id = c.id AND c.role = 'coach'
+                LEFT JOIN lifegroup_members lm ON u.id = lm.user_id AND lm.status = 'active'
+                LEFT JOIN lifegroups l ON lm.lifegroup_id = l.id
+                WHERE u.role = 'member' 
+                AND (u.name LIKE ? OR u.email LIKE ?)
+                AND (c.id = ? OR m.id IN (
+                    SELECT user_id FROM hierarchy WHERE parent_id = ?
+                ))";
+        
+        $params = ["%$search%", "%$search%", $coachId, $coachId];
+        $sql .= " ORDER BY u.name ASC";
+        return $this->db->fetchAll($sql, $params);
+    }
+
+    public function getCoachesByChurch(int $churchId): array
+    {
+        $sql = "SELECT u.* FROM {$this->table} u 
+                WHERE u.role = 'coach' AND u.church_id = ?
+                ORDER BY u.name ASC";
+        return $this->db->fetchAll($sql, [$churchId]);
+    }
+
+    public function findByEmail(string $email): array|false
+    {
+        $sql = "SELECT * FROM {$this->table} WHERE email = ?";
+        return $this->db->fetch($sql, [$email]);
+    }
+
+    public function addToHierarchy(int $memberId, int $coachId): bool
+    {
+        try {
+            // First, get the mentor under this coach
+            $mentorSql = "SELECT u.id FROM {$this->table} u 
+                         INNER JOIN hierarchy h ON u.id = h.user_id 
+                         WHERE h.parent_id = ? AND u.role = 'mentor' 
+                         LIMIT 1";
+            $mentor = $this->db->fetch($mentorSql, [$coachId]);
+            
+            if ($mentor) {
+                // Add member under mentor
+                $sql = "INSERT INTO hierarchy (user_id, parent_id) VALUES (?, ?)";
+                $this->db->query($sql, [$memberId, $mentor['id']]);
+                return true;
+            } else {
+                // Add member directly under coach
+                $sql = "INSERT INTO hierarchy (user_id, parent_id) VALUES (?, ?)";
+                $this->db->query($sql, [$memberId, $coachId]);
+                return true;
+            }
+        } catch (\Exception $e) {
+            error_log("Error adding member to hierarchy: " . $e->getMessage());
+            return false;
+        }
+    }
+
     public function getMemberStatusPercentages(int $churchId): array
     {
         // First get total members count

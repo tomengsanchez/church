@@ -120,6 +120,21 @@ $router->get('/member/lifegroups-by-mentor/{mentorId}', [MemberController::class
 $router->get('/events/church', [ChurchEventController::class, 'index']);
 $router->get('/events/satelife', [SatelifeEventController::class, 'index']);
 $router->get('/events/lifegroup', [LifegroupEventController::class, 'index']);
+
+// Satelife event CRUD
+$router->get('/events/satelife/create', [SatelifeEventController::class, 'create']);
+$router->post('/events/satelife/create', [SatelifeEventController::class, 'store']);
+$router->get('/events/satelife/edit/{id}', [SatelifeEventController::class, 'edit']);
+$router->post('/events/satelife/edit/{id}', [SatelifeEventController::class, 'update']);
+$router->post('/events/satelife/delete/{id}', [SatelifeEventController::class, 'delete']);
+$router->get('/events/satelife/view/{id}', [SatelifeEventController::class, 'show']);
+$router->post('/events/satelife/duplicate/{id}', [SatelifeEventController::class, 'duplicate']);
+
+// Satelife event AJAX endpoints
+$router->post('/events/satelife/getMembersByCoach', [SatelifeEventController::class, 'getMembersByCoach']);
+$router->post('/events/satelife/searchMembers', [SatelifeEventController::class, 'searchMembers']);
+$router->post('/events/satelife/addMemberToSatelife', [SatelifeEventController::class, 'addMemberToSatelife']);
+$router->post('/events/satelife/getCoachesByChurch', [SatelifeEventController::class, 'getCoachesByChurch']);
 // Lifegroup event CRUD
 $router->get('/events/lifegroup/create', [LifegroupEventController::class, 'create']);
 $router->post('/events/lifegroup/create', [LifegroupEventController::class, 'store']);
@@ -166,6 +181,11 @@ $router->get('/test-logs', function() {
 // Test route for pastor dashboard functionality
 $router->get('/test-pastor-dashboard', function() {
     include __DIR__ . '/test_pastor_dashboard.php';
+});
+
+// Test route for satelife events functionality
+$router->get('/test-satelife-events', function() {
+    include __DIR__ . '/test_satelife_events.php';
 });
 
 // Dispatch the request
