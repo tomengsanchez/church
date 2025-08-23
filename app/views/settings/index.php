@@ -40,9 +40,9 @@
 						</thead>
 						<tbody id="statusTableBody">
 							<?php foreach ($statuses as $status): ?>
-							<tr data-id="<?= (int)$status['id'] ?>" class="status-row">
+							<tr data-id="<?= (int)$status['id'] ?>" data-sort-order="<?= (int)$status['sort_order'] ?>" class="status-row">
 								<td>
-									<div class="drag-handle" style="cursor: grab; padding: 5px; text-align: center; user-select: none;" draggable="false">
+									<div class="drag-handle" style="cursor: grab; padding: 5px; text-align: center; user-select: none;">
 										<i class="fas fa-grip-vertical text-muted"></i>
 									</div>
 								</td>
@@ -88,15 +88,27 @@
 													<div class="form-text">Lowercase, no spaces. Example: active_member</div>
 												</div>
 												<div class="row">
-													<div class="col-md-4 mb-3">
+													<div class="col-md-3 mb-3">
 														<label class="form-label">Sort Order</label>
 														<input type="number" name="sort_order" class="form-control" value="<?= (int)$status['sort_order'] ?>">
 													</div>
-													<div class="col-md-4 mb-3 form-check mt-4">
+													<div class="col-md-3 mb-3">
+														<label class="form-label">Badge Class</label>
+														<select name="badge_class" class="form-select">
+															<option value="">Default</option>
+															<option value="success" <?= ($status['badge_class'] ?? '') === 'success' ? 'selected' : '' ?>>Success (Green)</option>
+															<option value="secondary" <?= ($status['badge_class'] ?? '') === 'secondary' ? 'selected' : '' ?>>Secondary (Gray)</option>
+															<option value="warning" <?= ($status['badge_class'] ?? '') === 'warning' ? 'selected' : '' ?>>Warning (Yellow)</option>
+															<option value="danger" <?= ($status['badge_class'] ?? '') === 'danger' ? 'selected' : '' ?>>Danger (Red)</option>
+															<option value="info" <?= ($status['badge_class'] ?? '') === 'info' ? 'selected' : '' ?>>Info (Blue)</option>
+															<option value="primary" <?= ($status['badge_class'] ?? '') === 'primary' ? 'selected' : '' ?>>Primary (Purple)</option>
+														</select>
+													</div>
+													<div class="col-md-3 mb-3 form-check mt-4">
 														<input type="checkbox" name="is_active" class="form-check-input" id="active<?= (int)$status['id'] ?>" <?= $status['is_active'] ? 'checked' : '' ?>>
 														<label class="form-check-label" for="active<?= (int)$status['id'] ?>">Active</label>
 													</div>
-													<div class="col-md-4 mb-3 form-check mt-4">
+													<div class="col-md-3 mb-3 form-check mt-4">
 														<input type="checkbox" name="is_default" class="form-check-input" id="default<?= (int)$status['id'] ?>" <?= $status['is_default'] ? 'checked' : '' ?>>
 														<label class="form-check-label" for="default<?= (int)$status['id'] ?>">Default</label>
 													</div>
@@ -139,15 +151,27 @@
 						<div class="form-text">Lowercase, no spaces. Example: active</div>
 					</div>
 					<div class="row">
-						<div class="col-md-4 mb-3">
+						<div class="col-md-3 mb-3">
 							<label class="form-label">Sort Order</label>
 							<input type="number" name="sort_order" class="form-control" value="0">
 						</div>
-						<div class="col-md-4 mb-3 form-check mt-4">
+						<div class="col-md-3 mb-3">
+							<label class="form-label">Badge Class</label>
+							<select name="badge_class" class="form-select">
+								<option value="">Default</option>
+								<option value="success">Success (Green)</option>
+								<option value="secondary">Secondary (Gray)</option>
+								<option value="warning">Warning (Yellow)</option>
+								<option value="danger">Danger (Red)</option>
+								<option value="info">Info (Blue)</option>
+								<option value="primary">Primary (Purple)</option>
+							</select>
+						</div>
+						<div class="col-md-3 mb-3 form-check mt-4">
 							<input type="checkbox" name="is_active" class="form-check-input" id="createActive" checked>
 							<label class="form-check-label" for="createActive">Active</label>
 						</div>
-						<div class="col-md-4 mb-3 form-check mt-4">
+						<div class="col-md-3 mb-3 form-check mt-4">
 							<input type="checkbox" name="is_default" class="form-check-input" id="createDefault">
 							<label class="form-check-label" for="createDefault">Default</label>
 						</div>
@@ -273,51 +297,38 @@ document.addEventListener('DOMContentLoaded', function() {
         }, 3000);
     }
 
-    // Improved drag and drop implementation
-    let isDragging = false;
-    let dragStartRow = null;
+    // Simplified drag and drop implementation
 
-    tbody.addEventListener('mousedown', function(e) {
-        const dragHandle = e.target.closest('.drag-handle');
-        if (dragHandle) {
-            console.log('Mouse down on drag handle');
-            const row = dragHandle.closest('.status-row');
-            if (row) {
-                dragStartRow = row;
-                row.draggable = true;
-                console.log('Set row as draggable:', row.getAttribute('data-id'));
+    // Make all rows draggable
+    tbody.querySelectorAll('.status-row').forEach(row => {
+        row.draggable = true;
+        console.log('Made row draggable:', row.getAttribute('data-id'));
+        
+        // Add visual feedback on hover
+        row.addEventListener('mouseenter', function() {
+            this.style.backgroundColor = '#f8f9fa';
+        });
+        
+        row.addEventListener('mouseleave', function() {
+            if (!this.classList.contains('dragging')) {
+                this.style.backgroundColor = '';
             }
-        }
+        });
+        
+
     });
 
     tbody.addEventListener('dragstart', function(e) {
         console.log('Drag start event triggered');
-        
-        // Use the stored drag start row if available
-        if (dragStartRow) {
-            console.log('Using stored drag start row:', dragStartRow.getAttribute('data-id'));
-            draggedElement = dragStartRow;
+        const row = e.target.closest('.status-row');
+        if (row) {
+            draggedElement = row;
             e.dataTransfer.effectAllowed = 'move';
-            e.dataTransfer.setData('text/html', draggedElement.outerHTML);
-            draggedElement.style.opacity = '0.5';
-            draggedElement.classList.add('dragging');
-            isDragging = true;
+            e.dataTransfer.setData('text/html', row.outerHTML);
+            row.style.opacity = '0.5';
+            row.classList.add('dragging');
             saveOriginalOrder();
-        } else {
-            // Fallback to finding the drag handle
-            const dragHandle = e.target.closest('.drag-handle');
-            if (dragHandle) {
-                console.log('Drag handle found, starting drag');
-                draggedElement = dragHandle.closest('.status-row');
-                e.dataTransfer.effectAllowed = 'move';
-                e.dataTransfer.setData('text/html', draggedElement.outerHTML);
-                draggedElement.style.opacity = '0.5';
-                draggedElement.classList.add('dragging');
-                isDragging = true;
-                saveOriginalOrder();
-            } else {
-                console.log('No drag handle found');
-            }
+            console.log('Started dragging row:', row.getAttribute('data-id'));
         }
     });
 
@@ -328,17 +339,11 @@ document.addEventListener('DOMContentLoaded', function() {
             draggedElement.classList.remove('dragging');
             draggedElement = null;
         }
-        isDragging = false;
-        dragStartRow = null;
     });
 
     tbody.addEventListener('dragover', function(e) {
         e.preventDefault();
         e.dataTransfer.dropEffect = 'move';
-        
-        if (!isDragging || !draggedElement) {
-            return;
-        }
         
         const targetRow = e.target.closest('.status-row');
         if (targetRow && targetRow !== draggedElement) {
@@ -370,13 +375,8 @@ document.addEventListener('DOMContentLoaded', function() {
         e.preventDefault();
         console.log('Drop event triggered');
         
-        if (!isDragging || !draggedElement) {
-            console.log('No active drag operation');
-            return;
-        }
-        
         const targetRow = e.target.closest('.status-row');
-        if (targetRow && targetRow !== draggedElement) {
+        if (targetRow && draggedElement && targetRow !== draggedElement) {
             console.log('Valid drop target found');
             const rect = targetRow.getBoundingClientRect();
             const midpoint = rect.top + rect.height / 2;
@@ -393,37 +393,12 @@ document.addEventListener('DOMContentLoaded', function() {
             
             updateSortOrder();
             saveNewOrder();
-        } else {
-            console.log('Invalid drop target or no dragged element');
         }
         
         // Remove drop indicators
         tbody.querySelectorAll('.status-row').forEach(row => {
             row.classList.remove('drop-above', 'drop-below');
         });
-    });
-
-    // Make rows draggable and add explicit drag handle listeners
-    tbody.querySelectorAll('.status-row').forEach(row => {
-        row.draggable = true;
-        console.log('Made row draggable:', row.getAttribute('data-id'));
-        
-        // Add explicit drag handle listener
-        const dragHandle = row.querySelector('.drag-handle');
-        if (dragHandle) {
-            dragHandle.addEventListener('mousedown', function(e) {
-                e.preventDefault();
-                e.stopPropagation();
-                console.log('Drag handle mousedown for row:', row.getAttribute('data-id'));
-                dragStartRow = row;
-                row.draggable = true;
-            });
-            
-            dragHandle.addEventListener('click', function(e) {
-                e.preventDefault();
-                e.stopPropagation();
-            });
-        }
     });
 
     // Initialize

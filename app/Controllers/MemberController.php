@@ -90,6 +90,7 @@ class MemberController extends Controller
         $this->view('member/index', [
             'members' => $enhancedMembers,
             'churches' => $this->churchModel->getAllChurches(),
+            'memberStatuses' => $this->memberStatusModel->getAllActive(),
             'stats' => $this->memberModel->getMemberStats($churchId)
         ]);
     }

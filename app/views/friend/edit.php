@@ -56,9 +56,11 @@
                             <label for="status" class="form-label">Status</label>
                             <select class="form-select" id="status" name="status">
                                 <?php foreach ($memberStatuses as $status): ?>
-                                <option value="<?= $status['slug'] ?>" <?= ($friend['status'] ?? '') === $status['slug'] ? 'selected' : '' ?>>
-                                    <?= htmlspecialchars($status['name'] ?? '') ?>
-                                </option>
+                                    <?php if ((int)$status['is_active'] === 1): ?>
+                                        <option value="<?= $status['slug'] ?>" <?= ($friend['status'] ?? '') === $status['slug'] ? 'selected' : '' ?>>
+                                            <?= htmlspecialchars($status['name'] ?? '') ?>
+                                        </option>
+                                    <?php endif; ?>
                                 <?php endforeach; ?>
                             </select>
                         </div>

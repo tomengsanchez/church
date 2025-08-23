@@ -33,6 +33,7 @@ class MemberStatusModel extends Model
             'is_active' => isset($data['is_active']) ? (int)$data['is_active'] : 1,
             'is_default' => isset($data['is_default']) ? (int)$data['is_default'] : 0,
             'sort_order' => isset($data['sort_order']) ? (int)$data['sort_order'] : 0,
+            'badge_class' => $data['badge_class'] ?? null,
         ]);
     }
 
@@ -44,6 +45,7 @@ class MemberStatusModel extends Model
             'is_active' => isset($data['is_active']) ? (int)$data['is_active'] : 1,
             'is_default' => isset($data['is_default']) ? (int)$data['is_default'] : 0,
             'sort_order' => isset($data['sort_order']) ? (int)$data['sort_order'] : 0,
+            'badge_class' => $data['badge_class'] ?? null,
         ]);
     }
 
@@ -74,7 +76,9 @@ class MemberStatusModel extends Model
     public function updateSortOrders(array $statuses): bool
     {
         try {
-            $this->db->beginTransaction();
+            // Get the PDO connection for transactions
+            $pdo = $this->db->getConnection();
+            $pdo->beginTransaction();
             
             foreach ($statuses as $index => $status) {
                 if (!isset($status['id']) || !isset($status['sort_order'])) {
@@ -89,10 +93,12 @@ class MemberStatusModel extends Model
                 }
             }
             
-            $this->db->commit();
+            $pdo->commit();
             return true;
         } catch (\Exception $e) {
-            $this->db->rollback();
+            if (isset($pdo)) {
+                $pdo->rollback();
+            }
             error_log("Error updating sort orders: " . $e->getMessage());
             return false;
         }

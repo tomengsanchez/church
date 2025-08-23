@@ -27,10 +27,15 @@
                         <label for="status_filter" class="form-label">Status</label>
                         <select class="form-select" id="status_filter" name="status">
                             <option value="">All Status</option>
-                            <option value="active" <?= ($_GET['status'] ?? '') === 'active' ? 'selected' : '' ?>>Active</option>
-                            <option value="inactive" <?= ($_GET['status'] ?? '') === 'inactive' ? 'selected' : '' ?>>Inactive</option>
-                            <option value="pending" <?= ($_GET['status'] ?? '') === 'pending' ? 'selected' : '' ?>>Pending</option>
-                            <option value="suspended" <?= ($_GET['status'] ?? '') === 'suspended' ? 'selected' : '' ?>>Suspended</option>
+                            <?php if (!empty($memberStatuses ?? [])): ?>
+                                <?php foreach ($memberStatuses as $status): ?>
+                                    <?php if ((int)$status['is_active'] === 1): ?>
+                                        <option value="<?= htmlspecialchars($status['slug']) ?>" <?= ($_GET['status'] ?? '') === $status['slug'] ? 'selected' : '' ?>>
+                                            <?= htmlspecialchars($status['name']) ?>
+                                        </option>
+                                    <?php endif; ?>
+                                <?php endforeach; ?>
+                            <?php endif; ?>
                         </select>
                     </div>
                     <div class="col-md-3">

@@ -79,6 +79,7 @@ class FriendController extends Controller
         $this->view('friend/index', [
             'friends' => $friends,
             'churches' => $this->churchModel->getAllChurches(),
+            'memberStatuses' => $this->memberStatusModel->getAllActive(),
             'stats' => $this->getFriendStats($churchId)
         ]);
     }

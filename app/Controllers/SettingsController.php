@@ -35,6 +35,7 @@ class SettingsController extends Controller
                 'is_active' => isset($_POST['is_active']) ? 1 : 0,
                 'is_default' => isset($_POST['is_default']) ? 1 : 0,
                 'sort_order' => (int)($_POST['sort_order'] ?? 0),
+                'badge_class' => trim($_POST['badge_class'] ?? ''),
             ];
 
             if ($data['slug'] === '' || $data['name'] === '') {
@@ -72,6 +73,7 @@ class SettingsController extends Controller
                 'is_active' => isset($_POST['is_active']) ? 1 : 0,
                 'is_default' => isset($_POST['is_default']) ? 1 : 0,
                 'sort_order' => (int)($_POST['sort_order'] ?? 0),
+                'badge_class' => trim($_POST['badge_class'] ?? ''),
             ];
 
             if ($data['slug'] === '' || $data['name'] === '') {
