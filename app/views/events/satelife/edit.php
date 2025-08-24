@@ -53,7 +53,7 @@
                                     <option value="">Select Coach</option>
                                     <?php if (!empty($coaches)): ?>
                                         <?php foreach ($coaches as $coach): ?>
-                                            <option value="<?= $coach['id'] ?>" <?= ($coach['id'] == $event['created_by']) ? 'selected' : '' ?>>
+                                            <option value="<?= $coach['id'] ?>" <?= ($coach['id'] == $event['coach_id']) ? 'selected' : '' ?>>
                                                 <?= htmlspecialchars($coach['name']) ?>
                                             </option>
                                         <?php endforeach; ?>

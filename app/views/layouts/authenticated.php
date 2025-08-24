@@ -203,5 +203,7 @@
     <script src="https://code.jquery.com/jquery-3.7.0.min.js"></script>
     <!-- Custom JS -->
     <script src="/assets/js/app.js"></script>
+    <!-- Pagination JS -->
+    <script src="/assets/js/pagination.js"></script>
 </body>
 </html> 

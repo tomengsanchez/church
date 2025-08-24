@@ -2,8 +2,11 @@
 
 namespace App\Models;
 
+use App\Core\Paginatable;
+
 class SatelifeEventModel extends EventModel
 {
+    use Paginatable;
     protected string $table = 'satelife_events';
     protected string $eventType = 'satelife';
     
@@ -68,12 +71,96 @@ class SatelifeEventModel extends EventModel
                 FROM {$this->table} e 
                 LEFT JOIN users u ON e.created_by = u.id 
                 LEFT JOIN churches c ON e.church_id = c.id 
-                LEFT JOIN event_attendees ea ON e.id = ea.event_id AND ea.event_type = 'satelife'
-                LEFT JOIN hierarchy h ON ea.user_id = h.user_id
-                LEFT JOIN hierarchy h2 ON h.parent_id = h2.user_id
-                LEFT JOIN users coach ON h2.parent_id = coach.id AND coach.role = 'coach'
-                WHERE e.id = ?
-                GROUP BY e.id";
+                LEFT JOIN users coach ON e.coach_id = coach.id
+                WHERE e.id = ?";
         return $this->db->fetch($sql, [$id]);
+    }
+
+    public function getPaginatedEventsWithDetails(
+        int $page = 1,
+        int $perPage = 10,
+        string $searchTerm = '',
+        string $sortField = '',
+        string $sortDirection = 'asc',
+        array $additionalFilters = []
+    ): array {
+        $offset = ($page - 1) * $perPage;
+        
+        // Check if we need coach filter
+        $hasCoachFilter = !empty($additionalFilters['coach_id']);
+        
+        // Build WHERE clause for search
+        $whereClause = '';
+        $whereParams = [];
+        
+        if (!empty($searchTerm)) {
+            $whereClause = "WHERE (e.title LIKE ? OR e.description LIKE ? OR e.location LIKE ? OR u.name LIKE ? OR c.name LIKE ?)";
+            $searchParam = "%{$searchTerm}%";
+            $whereParams = [$searchParam, $searchParam, $searchParam, $searchParam, $searchParam];
+        }
+        
+        // Add additional filters
+        if (!empty($additionalFilters)) {
+            $filterConditions = [];
+            foreach ($additionalFilters as $field => $value) {
+                if ($value !== null && $value !== '') {
+                    if ($field === 'coach_id') {
+                        // Coach filter - filter events by the specific coach
+                        $filterConditions[] = "e.coach_id = ?";
+                        $whereParams[] = $value;
+                    } else {
+                        $filterConditions[] = "{$field} = ?";
+                        $whereParams[] = $value;
+                    }
+                }
+            }
+            if (!empty($filterConditions)) {
+                if (empty($whereClause)) {
+                    $whereClause = "WHERE " . implode(' AND ', $filterConditions);
+                } else {
+                    $whereClause .= " AND " . implode(' AND ', $filterConditions);
+                }
+            }
+        }
+        
+        // Build ORDER BY clause
+        $orderByClause = '';
+        $allowedSortFields = ['e.title', 'e.event_date', 'e.event_time', 'e.created_at', 'u.name', 'c.name'];
+        if (!empty($sortField) && in_array($sortField, $allowedSortFields)) {
+            $direction = strtoupper($sortDirection) === 'DESC' ? 'DESC' : 'ASC';
+            $orderByClause = "ORDER BY {$sortField} {$direction}";
+        } else {
+            $orderByClause = "ORDER BY e.event_date DESC, e.event_time ASC";
+        }
+        
+        // Get total count
+        $countSql = "SELECT COUNT(DISTINCT e.id) as total FROM {$this->table} e 
+                     LEFT JOIN users u ON e.created_by = u.id 
+                     LEFT JOIN churches c ON e.church_id = c.id 
+                     {$whereClause}";
+        
+        $totalResult = $this->db->fetch($countSql, $whereParams);
+        $totalItems = $totalResult['total'] ?? 0;
+        
+        // Get paginated data
+        $dataSql = "SELECT e.*, u.name as created_by_name, c.name as church_name,
+                           coach.name as coach_name, coach.satelife_name as satelife_name
+                    FROM {$this->table} e 
+                    LEFT JOIN users u ON e.created_by = u.id 
+                    LEFT JOIN churches c ON e.church_id = c.id 
+                    LEFT JOIN users coach ON e.coach_id = coach.id
+                    {$whereClause} 
+                    {$orderByClause} 
+                    LIMIT {$perPage} OFFSET {$offset}";
+        
+        $items = $this->db->fetchAll($dataSql, $whereParams);
+        
+        return [
+            'items' => $items,
+            'total' => $totalItems,
+            'page' => $page,
+            'per_page' => $perPage,
+            'total_pages' => ceil($totalItems / $perPage)
+        ];
     }
 } 

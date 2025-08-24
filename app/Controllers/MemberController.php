@@ -3,6 +3,7 @@
 namespace App\Controllers;
 
 use App\Core\Controller;
+use App\Core\Pagination;
 use App\Models\MemberModel;
 use App\Models\UserModel;
 use App\Models\ChurchModel;
@@ -33,62 +34,73 @@ class MemberController extends Controller
         $churchId = $_SESSION['church_id'] ?? null;
         $userRole = $this->getUserRole();
         
-        // Get filter parameters
-        $status = $_GET['status'] ?? '';
-        $churchFilter = $_GET['church_id'] ?? '';
-        $search = $_GET['search'] ?? '';
+        // Get pagination parameters
+        $page = (int) ($_GET['page'] ?? 1);
+        $perPage = (int) ($_GET['per_page'] ?? 10);
+        $searchTerm = $_GET['search'] ?? '';
+        $sortField = $_GET['sort'] ?? '';
+        $sortDirection = $_GET['direction'] ?? 'asc';
         
-        $members = [];
-        
-        // If filters are applied, use search method (now includes hierarchy)
-        if (!empty($status) || !empty($churchFilter) || !empty($search)) {
-            $members = $this->memberModel->searchMembers($search, $churchFilter ? (int)$churchFilter : null);
-            if (!empty($status)) {
-                $members = array_filter($members, function($member) use ($status) {
-                    return $member['status'] === $status;
-                });
-            }
-        } else {
-            // Get members based on user role
-            switch ($userRole) {
-                case ROLE_SUPER_ADMIN:
-                    // Super admin can see all members with hierarchy
-                    $members = $this->memberModel->getAllMembersWithHierarchy();
-                    break;
-                case ROLE_PASTOR:
-                    $members = $this->memberModel->getMembersByPastor($_SESSION['user_id']);
-                    break;
-                case ROLE_COACH:
-                    $members = $this->memberModel->getMembersByCoach($_SESSION['user_id']);
-                    break;
-                case ROLE_MENTOR:
-                    $members = $this->memberModel->getMembersByMentor($_SESSION['user_id']);
-                    break;
-                default:
-                    $members = [];
-            }
+        // Validate page size
+        $allowedPageSizes = [5, 10, 50, 100, 200, 500];
+        if (!in_array($perPage, $allowedPageSizes)) {
+            $perPage = 10;
         }
         
-        // Always enhance member data with hierarchy information
-        $enhancedMembers = [];
-        foreach ($members as $member) {
-            // Always get full hierarchy data for each member
-            $enhancedMember = $this->memberModel->getMemberWithHierarchy($member['id']);
-            if ($enhancedMember) {
-                $enhancedMembers[] = $enhancedMember;
-            } else {
-                // Fallback to original member data if enhancement fails
-                // Add default values for hierarchy fields
-                $member['church_name'] = $member['church_name'] ?? 'Not Assigned';
-                $member['pastor_name'] = $member['pastor_name'] ?? 'Not Assigned';
-                $member['coach_name'] = $member['coach_name'] ?? 'Not Assigned';
-                $member['mentor_name'] = $member['mentor_name'] ?? 'Not Assigned';
-                $enhancedMembers[] = $member;
-            }
+        // Build additional filters based on user role and existing filters
+        $additionalFilters = [];
+        
+        // Add status filter if provided
+        if (!empty($_GET['status'])) {
+            $additionalFilters['u.status'] = $_GET['status'];
         }
+        
+        // Add church filter if provided
+        if (!empty($_GET['church_id'])) {
+            $additionalFilters['u.church_id'] = (int)$_GET['church_id'];
+        }
+        
+        // Add role-based filters
+        switch ($userRole) {
+            case ROLE_PASTOR:
+                $additionalFilters['u.church_id'] = $churchId;
+                break;
+            case ROLE_COACH:
+                // For coaches, we need to filter by their hierarchy
+                // This will be handled in the model method
+                break;
+            case ROLE_MENTOR:
+                // For mentors, we need to filter by their hierarchy
+                // This will be handled in the model method
+                break;
+        }
+        
+        // Get paginated data
+        $result = $this->memberModel->getPaginatedMembersWithHierarchy(
+            $page,
+            $perPage,
+            $searchTerm,
+            $sortField,
+            $sortDirection,
+            $additionalFilters
+        );
+        
+        // Create pagination object
+        $pagination = new Pagination(
+            $result['items'],
+            $result['page'],
+            $result['per_page'],
+            $result['total'],
+            $searchTerm,
+            $sortField,
+            $sortDirection,
+            $additionalFilters,
+            '/member'
+        );
         
         $this->view('member/index', [
-            'members' => $enhancedMembers,
+            'members' => $result['items'],
+            'pagination' => $pagination,
             'churches' => $this->churchModel->getAllChurches(),
             'memberStatuses' => $this->memberStatusModel->getAllActive(),
             'stats' => $this->memberModel->getMemberStats($churchId)
