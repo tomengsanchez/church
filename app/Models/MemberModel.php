@@ -3,9 +3,11 @@
 namespace App\Models;
 
 use App\Core\Model;
+use App\Core\Paginatable;
 
 class MemberModel extends Model
 {
+    use Paginatable;
     protected string $table = 'users';
     
     public function getMembersByChurch(int $churchId, ?string $status = null): array
@@ -92,6 +94,87 @@ class MemberModel extends Model
                 WHERE u.role = 'member'
                 ORDER BY u.name ASC";
         return $this->db->fetchAll($sql);
+    }
+
+    public function getPaginatedMembersWithHierarchy(
+        int $page = 1,
+        int $perPage = 10,
+        string $searchTerm = '',
+        string $sortField = '',
+        string $sortDirection = 'asc',
+        array $additionalFilters = []
+    ): array {
+        $offset = ($page - 1) * $perPage;
+        
+        // Build WHERE clause for search
+        $whereClause = "WHERE u.role = 'member'";
+        $whereParams = [];
+        
+        if (!empty($searchTerm)) {
+            $whereClause .= " AND (u.name LIKE ? OR u.email LIKE ? OR u.phone LIKE ? OR u.address LIKE ? OR ch.name LIKE ? OR c.name LIKE ? OR m.name LIKE ? OR l.name LIKE ?)";
+            $searchParam = "%{$searchTerm}%";
+            $whereParams = [$searchParam, $searchParam, $searchParam, $searchParam, $searchParam, $searchParam, $searchParam, $searchParam];
+        }
+        
+        // Add additional filters
+        if (!empty($additionalFilters)) {
+            foreach ($additionalFilters as $field => $value) {
+                if ($value !== null && $value !== '' && $field !== 'u.role') { // Skip u.role as it's already added
+                    $whereClause .= " AND {$field} = ?";
+                    $whereParams[] = $value;
+                }
+            }
+        }
+        
+        // Build ORDER BY clause
+        $orderByClause = '';
+        $allowedSortFields = ['u.name', 'u.email', 'u.status', 'u.created_at', 'ch.name', 'c.name', 'm.name', 'l.name'];
+        if (!empty($sortField) && in_array($sortField, $allowedSortFields)) {
+            $direction = strtoupper($sortDirection) === 'DESC' ? 'DESC' : 'ASC';
+            $orderByClause = "ORDER BY {$sortField} {$direction}";
+        } else {
+            $orderByClause = "ORDER BY u.name ASC";
+        }
+        
+        // Get total count
+        $countSql = "SELECT COUNT(DISTINCT u.id) as total FROM {$this->table} u 
+                     LEFT JOIN churches ch ON u.church_id = ch.id
+                     LEFT JOIN users p ON ch.pastor_id = p.id
+                     LEFT JOIN hierarchy h1 ON u.id = h1.user_id
+                     LEFT JOIN users m ON h1.parent_id = m.id AND m.role = 'mentor'
+                     LEFT JOIN hierarchy h2 ON m.id = h2.user_id
+                     LEFT JOIN users c ON h2.parent_id = c.id AND c.role = 'coach'
+                     LEFT JOIN lifegroup_members lm ON u.id = lm.user_id AND lm.status = 'active'
+                     LEFT JOIN lifegroups l ON lm.lifegroup_id = l.id
+                     {$whereClause}";
+        
+        $totalResult = $this->db->fetch($countSql, $whereParams);
+        $totalItems = $totalResult['total'] ?? 0;
+        
+        // Get paginated data
+        $dataSql = "SELECT u.*, ch.name as church_name, p.name as pastor_name, c.name as coach_name, m.name as mentor_name, l.name as lifegroup_name
+                    FROM {$this->table} u 
+                    LEFT JOIN churches ch ON u.church_id = ch.id
+                    LEFT JOIN users p ON ch.pastor_id = p.id
+                    LEFT JOIN hierarchy h1 ON u.id = h1.user_id
+                    LEFT JOIN users m ON h1.parent_id = m.id AND m.role = 'mentor'
+                    LEFT JOIN hierarchy h2 ON m.id = h2.user_id
+                    LEFT JOIN users c ON h2.parent_id = c.id AND c.role = 'coach'
+                    LEFT JOIN lifegroup_members lm ON u.id = lm.user_id AND lm.status = 'active'
+                    LEFT JOIN lifegroups l ON lm.lifegroup_id = l.id
+                    {$whereClause} 
+                    {$orderByClause} 
+                    LIMIT {$perPage} OFFSET {$offset}";
+        
+        $items = $this->db->fetchAll($dataSql, $whereParams);
+        
+        return [
+            'items' => $items,
+            'total' => $totalItems,
+            'page' => $page,
+            'per_page' => $perPage,
+            'total_pages' => ceil($totalItems / $perPage)
+        ];
     }
     
     public function getMemberStats(?int $churchId = null): array|false

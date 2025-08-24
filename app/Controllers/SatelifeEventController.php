@@ -3,10 +3,12 @@
 namespace App\Controllers;
 
 use App\Core\Controller;
+use App\Core\Pagination;
 use App\Models\SatelifeEventModel;
 use App\Models\ChurchModel;
 use App\Models\MemberModel;
 use App\Models\EventAttendeeModel;
+use App\Models\CoachModel;
 
 class SatelifeEventController extends Controller
 {
@@ -14,6 +16,7 @@ class SatelifeEventController extends Controller
     private ChurchModel $churchModel;
     private MemberModel $memberModel;
     private EventAttendeeModel $attendeeModel;
+    private CoachModel $coachModel;
     
     public function __construct()
     {
@@ -21,6 +24,7 @@ class SatelifeEventController extends Controller
         $this->churchModel = new ChurchModel();
         $this->memberModel = new MemberModel();
         $this->attendeeModel = new EventAttendeeModel();
+        $this->coachModel = new CoachModel();
     }
     
     public function index(): void
@@ -32,23 +36,64 @@ class SatelifeEventController extends Controller
         $userId = $_SESSION['user_id'];
         $churchId = $_SESSION['church_id'] ?? null;
         
-        $events = [];
+        // Get pagination parameters
+        $page = (int) ($_GET['page'] ?? 1);
+        $perPage = (int) ($_GET['per_page'] ?? 10);
+        $searchTerm = $_GET['search'] ?? '';
+        $sortField = $_GET['sort'] ?? '';
+        $sortDirection = $_GET['direction'] ?? 'asc';
         
-        if ($userRole === ROLE_SUPER_ADMIN) {
-            // Super admin can see all satelife events
-            $events = $this->eventModel->getAllEvents();
-        } elseif ($userRole === ROLE_PASTOR) {
-            // Pastor can see events in their church
-            $events = $this->eventModel->getEventsByChurch($churchId);
-        } else {
-            // Coaches can see events they created AND events where their members are attending
-            $events = $this->eventModel->getEventsRelevantToCoach($userId);
+        // Validate page size
+        $allowedPageSizes = [5, 10, 50, 100, 200, 500];
+        if (!in_array($perPage, $allowedPageSizes)) {
+            $perPage = 10;
         }
+        
+        // Build additional filters based on user role and filters
+        $additionalFilters = [];
+        
+        if ($userRole === ROLE_PASTOR) {
+            // Pastor can see events in their church
+            $additionalFilters['e.church_id'] = $churchId;
+        } elseif ($userRole === ROLE_COACH) {
+            // Coaches can only see their own events
+            $additionalFilters['e.coach_id'] = $userId;
+        }
+        
+        // Add coach filter if provided (only for pastors and admins)
+        if ($userRole !== ROLE_COACH && !empty($_GET['coach_id'])) {
+            $additionalFilters['coach_id'] = (int)$_GET['coach_id'];
+        }
+        
+        // Get paginated data
+        $result = $this->eventModel->getPaginatedEventsWithDetails(
+            $page,
+            $perPage,
+            $searchTerm,
+            $sortField,
+            $sortDirection,
+            $additionalFilters
+        );
+        
+        // Create pagination object
+        $pagination = new Pagination(
+            $result['items'],
+            $result['page'],
+            $result['per_page'],
+            $result['total'],
+            $searchTerm,
+            $sortField,
+            $sortDirection,
+            $additionalFilters,
+            '/events/satelife'
+        );
         
         $this->view('events/satelife/index', [
             'title' => 'Satelife Events',
-            'events' => $events,
-            'churches' => $this->churchModel->getAllChurches()
+            'events' => $result['items'],
+            'pagination' => $pagination,
+            'churches' => $this->churchModel->getAllChurches(),
+            'coaches' => $this->getAllCoaches()
         ]);
     }
 
@@ -89,9 +134,10 @@ class SatelifeEventController extends Controller
         $location = trim($_POST['location'] ?? '');
         $description = trim($_POST['description'] ?? '');
         $churchId = (int)($_POST['church_id'] ?? 0);
+        $coachId = (int)($_POST['coach_id'] ?? 0);
 
-        if ($title === '' || $eventDate === '' || $churchId <= 0) {
-            flash('Title, Date and Church are required.', 'danger');
+        if ($title === '' || $eventDate === '' || $churchId <= 0 || $coachId <= 0) {
+            flash('Title, Date, Church and Coach are required.', 'danger');
             $this->redirect('/events/satelife/create');
         }
 
@@ -102,6 +148,7 @@ class SatelifeEventController extends Controller
             'event_time' => $eventTime ?: null,
             'location' => $location ?: null,
             'church_id' => $churchId,
+            'coach_id' => $coachId,
             'created_by' => (int)$_SESSION['user_id'],
             'status' => 'active',
         ];
@@ -128,7 +175,15 @@ class SatelifeEventController extends Controller
 
         // Check if user can edit this event
         $userRole = $this->getUserRole();
-        if ($userRole !== ROLE_SUPER_ADMIN && $userRole !== ROLE_PASTOR && $event['created_by'] != $_SESSION['user_id']) {
+        $userId = $_SESSION['user_id'];
+        
+        if ($userRole === ROLE_COACH) {
+            // Coaches can only edit their own events
+            if ($event['coach_id'] != $userId) {
+                flash('You can only edit your own satelife events.', 'danger');
+                $this->redirect('/events/satelife');
+            }
+        } elseif ($userRole !== ROLE_SUPER_ADMIN && $userRole !== ROLE_PASTOR && $event['created_by'] != $userId) {
             flash('You can only edit events you created.', 'danger');
             $this->redirect('/events/satelife');
         }
@@ -154,7 +209,15 @@ class SatelifeEventController extends Controller
 
         // Check if user can edit this event
         $userRole = $this->getUserRole();
-        if ($userRole !== ROLE_SUPER_ADMIN && $userRole !== ROLE_PASTOR && $event['created_by'] != $_SESSION['user_id']) {
+        $userId = $_SESSION['user_id'];
+        
+        if ($userRole === ROLE_COACH) {
+            // Coaches can only edit their own events
+            if ($event['coach_id'] != $userId) {
+                flash('You can only edit your own satelife events.', 'danger');
+                $this->redirect('/events/satelife');
+            }
+        } elseif ($userRole !== ROLE_SUPER_ADMIN && $userRole !== ROLE_PASTOR && $event['created_by'] != $userId) {
             flash('You can only edit events you created.', 'danger');
             $this->redirect('/events/satelife');
         }
@@ -165,9 +228,10 @@ class SatelifeEventController extends Controller
         $location = trim($_POST['location'] ?? '');
         $description = trim($_POST['description'] ?? '');
         $churchId = (int)($_POST['church_id'] ?? 0);
+        $coachId = (int)($_POST['coach_id'] ?? 0);
 
-        if ($title === '' || $eventDate === '' || $churchId <= 0) {
-            flash('Title, Date and Church are required.', 'danger');
+        if ($title === '' || $eventDate === '' || $churchId <= 0 || $coachId <= 0) {
+            flash('Title, Date, Church and Coach are required.', 'danger');
             $this->redirect("/events/satelife/edit/{$id}");
         }
 
@@ -178,6 +242,7 @@ class SatelifeEventController extends Controller
             'event_time' => $eventTime ?: null,
             'location' => $location ?: null,
             'church_id' => $churchId,
+            'coach_id' => $coachId,
             'updated_at' => date('Y-m-d H:i:s')
         ];
 
@@ -203,7 +268,15 @@ class SatelifeEventController extends Controller
 
         // Check if user can delete this event
         $userRole = $this->getUserRole();
-        if ($userRole !== ROLE_SUPER_ADMIN && $userRole !== ROLE_PASTOR && $event['created_by'] != $_SESSION['user_id']) {
+        $userId = $_SESSION['user_id'];
+        
+        if ($userRole === ROLE_COACH) {
+            // Coaches can only delete their own events
+            if ($event['coach_id'] != $userId) {
+                flash('You can only delete your own satelife events.', 'danger');
+                $this->redirect('/events/satelife');
+            }
+        } elseif ($userRole !== ROLE_SUPER_ADMIN && $userRole !== ROLE_PASTOR && $event['created_by'] != $userId) {
             flash('You can only delete events you created.', 'danger');
             $this->redirect('/events/satelife');
         }
@@ -245,6 +318,21 @@ class SatelifeEventController extends Controller
             $this->redirect('/events/satelife');
         }
 
+        // Check if user can duplicate this event
+        $userRole = $this->getUserRole();
+        $userId = $_SESSION['user_id'];
+        
+        if ($userRole === ROLE_COACH) {
+            // Coaches can only duplicate their own events
+            if ($event['coach_id'] != $userId) {
+                flash('You can only duplicate your own satelife events.', 'danger');
+                $this->redirect('/events/satelife');
+            }
+        } elseif ($userRole !== ROLE_SUPER_ADMIN && $userRole !== ROLE_PASTOR && $event['created_by'] != $userId) {
+            flash('You can only duplicate events you created.', 'danger');
+            $this->redirect('/events/satelife');
+        }
+
         // Create a copy of the event
         $data = [
             'title' => $event['title'] . ' (Copy)',
@@ -253,6 +341,7 @@ class SatelifeEventController extends Controller
             'event_time' => $event['event_time'],
             'location' => $event['location'],
             'church_id' => $event['church_id'],
+            'coach_id' => $event['coach_id'],
             'created_by' => (int)$_SESSION['user_id'],
             'status' => 'active',
         ];
@@ -295,6 +384,11 @@ class SatelifeEventController extends Controller
             return [];
         }
         return $this->memberModel->getCoachesByChurch($churchId);
+    }
+    
+    private function getAllCoaches(): array
+    {
+        return $this->coachModel->getAllCoaches();
     }
 
     // AJAX endpoint for dynamic member loading

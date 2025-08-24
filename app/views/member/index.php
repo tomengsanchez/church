@@ -73,102 +73,110 @@
     <div class="col-12">
         <div class="card">
             <div class="card-body">
-                <?php if (!empty($members)): ?>
+                <!-- Pagination Controls -->
+                <div class="pagination-controls">
+                    <?= $pagination->renderSearchAndControls() ?>
+                </div>
+                
                 <div class="table-responsive">
                     <table class="table table-striped table-hover">
                         <thead>
                             <tr>
-                                <th>Name</th>
-                                <th>Email</th>
-                                <th>Church</th>
-                                <th>Pastor</th>
-                                <th>Coach</th>
-                                <th>Mentor</th>
-                                <th>Lifegroup</th>
-                                <th>Status</th>
-                                <th>Joined</th>
+                                <th data-sort="u.name" style="cursor: pointer;">
+                                    Name
+                                    <i class="fas fa-sort"></i>
+                                </th>
+                                <th data-sort="u.email" style="cursor: pointer;">
+                                    Email
+                                    <i class="fas fa-sort"></i>
+                                </th>
+                                <th data-sort="ch.name" style="cursor: pointer;">
+                                    Church
+                                    <i class="fas fa-sort"></i>
+                                </th>
+                                <th data-sort="p.name" style="cursor: pointer;">
+                                    Pastor
+                                    <i class="fas fa-sort"></i>
+                                </th>
+                                <th data-sort="c.name" style="cursor: pointer;">
+                                    Coach
+                                    <i class="fas fa-sort"></i>
+                                </th>
+                                <th data-sort="m.name" style="cursor: pointer;">
+                                    Mentor
+                                    <i class="fas fa-sort"></i>
+                                </th>
+                                <th data-sort="l.name" style="cursor: pointer;">
+                                    Lifegroup
+                                    <i class="fas fa-sort"></i>
+                                </th>
+                                <th data-sort="u.status" style="cursor: pointer;">
+                                    Status
+                                    <i class="fas fa-sort"></i>
+                                </th>
+                                <th data-sort="u.created_at" style="cursor: pointer;">
+                                    Joined
+                                    <i class="fas fa-sort"></i>
+                                </th>
                                 <th>Actions</th>
                             </tr>
                         </thead>
                         <tbody>
-                            <?php foreach ($members as $member): ?>
-                            <tr>
-                                <td>
-                                    <strong><?= htmlspecialchars($member['name'] ?? '') ?></strong>
-                                </td>
-                                <td>
-                                    <?php 
-                                    $email = $member['email'] ?? '';
-                                    if (strpos($email, 'no-email-') === 0 && strpos($email, '@placeholder.local') !== false) {
-                                        echo '<span class="text-muted">No Email</span>';
-                                    } else {
-                                        echo htmlspecialchars($email);
-                                    }
-                                    ?>
-                                </td>
-                                <td><?= htmlspecialchars($member['church_name'] ?? 'Not Assigned') ?></td>
-                                <td><?= htmlspecialchars($member['pastor_name'] ?? 'Not Assigned') ?></td>
-                                <td><?= htmlspecialchars($member['coach_name'] ?? 'Not Assigned') ?></td>
-                                <td><?= htmlspecialchars($member['mentor_name'] ?? 'Not Assigned') ?></td>
-                                <td><?= htmlspecialchars($member['lifegroup_name'] ?? 'Not Assigned') ?></td>
-                                <td>
-                                    <span class="badge bg-<?= getStatusBadgeClass($member['status']) ?>">
-                                        <?= ucfirst($member['status']) ?>
-                                    </span>
-                                </td>
-                                <td><?= date('M j, Y', strtotime($member['created_at'])) ?></td>
-                                <td>
-                                    <div class="btn-group" role="group">
-                                        <a href="/member/edit/<?= $member['id'] ?>" class="btn btn-outline-primary btn-sm" title="Edit">
-                                            <i class="fas fa-edit"></i>
-                                        </a>
-                                        <button type="button" class="btn btn-outline-danger btn-sm" 
-                                                onclick="deleteMember(<?= $member['id'] ?>, '<?= htmlspecialchars($member['name'] ?? '') ?>')" title="Delete">
-                                            <i class="fas fa-trash"></i>
-                                        </button>
-                                    </div>
-                                </td>
-                            </tr>
-                            <?php endforeach; ?>
+                            <?php if (empty($members)): ?>
+                                <tr>
+                                    <td colspan="10" class="text-center py-4">
+                                        <i class="fas fa-users fa-2x text-muted mb-2 d-block"></i>
+                                        <h6 class="text-muted">No Members Found</h6>
+                                        <p class="text-muted mb-0">No members match your current search criteria.</p>
+                                    </td>
+                                </tr>
+                            <?php else: ?>
+                                <?php foreach ($members as $member): ?>
+                                <tr>
+                                    <td>
+                                        <strong><?= htmlspecialchars($member['name'] ?? '') ?></strong>
+                                    </td>
+                                    <td>
+                                        <?php 
+                                        $email = $member['email'] ?? '';
+                                        if (strpos($email, 'no-email-') === 0 && strpos($email, '@placeholder.local') !== false) {
+                                            echo '<span class="text-muted">No Email</span>';
+                                        } else {
+                                            echo htmlspecialchars($email);
+                                        }
+                                        ?>
+                                    </td>
+                                    <td><?= htmlspecialchars($member['church_name'] ?? 'Not Assigned') ?></td>
+                                    <td><?= htmlspecialchars($member['pastor_name'] ?? 'Not Assigned') ?></td>
+                                    <td><?= htmlspecialchars($member['coach_name'] ?? 'Not Assigned') ?></td>
+                                    <td><?= htmlspecialchars($member['mentor_name'] ?? 'Not Assigned') ?></td>
+                                    <td><?= htmlspecialchars($member['lifegroup_name'] ?? 'Not Assigned') ?></td>
+                                    <td>
+                                        <span class="badge bg-<?= getStatusBadgeClass($member['status']) ?>">
+                                            <?= ucfirst($member['status']) ?>
+                                        </span>
+                                    </td>
+                                    <td><?= date('M j, Y', strtotime($member['created_at'])) ?></td>
+                                    <td>
+                                        <div class="btn-group" role="group">
+                                            <a href="/member/edit/<?= $member['id'] ?>" class="btn btn-outline-primary btn-sm" title="Edit">
+                                                <i class="fas fa-edit"></i>
+                                            </a>
+                                            <button type="button" class="btn btn-outline-danger btn-sm" 
+                                                    onclick="deleteMember(<?= $member['id'] ?>, '<?= htmlspecialchars($member['name'] ?? '') ?>')" title="Delete">
+                                                <i class="fas fa-trash"></i>
+                                            </button>
+                                        </div>
+                                    </td>
+                                </tr>
+                                <?php endforeach; ?>
+                            <?php endif; ?>
                         </tbody>
                     </table>
                 </div>
                 
-                <!-- Pagination -->
-                <?php if (isset($pagination) && $pagination['total_pages'] > 1): ?>
-                <nav aria-label="Member pagination" class="mt-4">
-                    <ul class="pagination justify-content-center">
-                        <?php if ($pagination['current_page'] > 1): ?>
-                        <li class="page-item">
-                            <a class="page-link" href="?page=<?= $pagination['current_page'] - 1 ?>&status=<?= $_GET['status'] ?? '' ?>&church_id=<?= $_GET['church_id'] ?? '' ?>&search=<?= $_GET['search'] ?? '' ?>">Previous</a>
-                        </li>
-                        <?php endif; ?>
-                        
-                        <?php for ($i = 1; $i <= $pagination['total_pages']; $i++): ?>
-                        <li class="page-item <?= $i == $pagination['current_page'] ? 'active' : '' ?>">
-                            <a class="page-link" href="?page=<?= $i ?>&status=<?= $_GET['status'] ?? '' ?>&church_id=<?= $_GET['church_id'] ?? '' ?>&search=<?= $_GET['search'] ?? '' ?>"><?= $i ?></a>
-                        </li>
-                        <?php endfor; ?>
-                        
-                        <?php if ($pagination['current_page'] < $pagination['total_pages']): ?>
-                        <li class="page-item">
-                            <a class="page-link" href="?page=<?= $pagination['current_page'] + 1 ?>&status=<?= $_GET['status'] ?? '' ?>&church_id=<?= $_GET['church_id'] ?? '' ?>&search=<?= $_GET['search'] ?? '' ?>">Next</a>
-                        </li>
-                        <?php endif; ?>
-                    </ul>
-                </nav>
-                <?php endif; ?>
-                
-                <?php else: ?>
-                <div class="text-center py-5">
-                    <i class="fas fa-users fa-3x text-muted mb-3"></i>
-                    <h4 class="text-muted">No Members Found</h4>
-                    <p class="text-muted">Start by adding your first member.</p>
-                    <a href="/member/create" class="btn btn-primary">
-                        <i class="fas fa-plus me-2"></i>Add Member
-                    </a>
-                </div>
-                <?php endif; ?>
+                <!-- Pagination Controls -->
+                <?= $pagination->renderPaginationControls() ?>
             </div>
         </div>
     </div>
